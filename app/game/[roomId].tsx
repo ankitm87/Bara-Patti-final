@@ -113,46 +113,60 @@ export default function GameScreen() {
 
   // ─── Dealing Animation ────────────────────────────────────────────────────
   useEffect(() => {
-    if (state.phase === "dealing") {
-      setShowShuffling(true);
-      setActivityLog([]);
-      playShuffle();
-      const shuffleTimer = setTimeout(() => {
-        setShowShuffling(false);
-        let cardIdx = 0;
-        const dealInterval = setInterval(() => {
-          cardIdx++;
-          setDealingCardIndex(cardIdx);
-          if (cardIdx >= 48) {
-            clearInterval(dealInterval);
-            setTimeout(() => dispatch({ type: "FINISH_DEALING" }), 400);
-          }
-        }, 60);
-        return () => clearInterval(dealInterval);
-      }, 1800);
-      return () => clearTimeout(shuffleTimer);
-    }
-  }, [state.phase === "dealing"]);
+    if (state.phase !== "dealing") return;
+    setShowShuffling(true);
+    setActivityLog([]);
+    playShuffle();
+    addLog("Shuffling and dealing cards...", "system");
+    const shuffleTimer = setTimeout(() => {
+      setShowShuffling(false);
+      let cardIdx = 0;
+      const dealInterval = setInterval(() => {
+        cardIdx++;
+        setDealingCardIndex(cardIdx);
+        if (cardIdx >= 48) {
+          clearInterval(dealInterval);
+          setTimeout(() => dispatch({ type: "FINISH_DEALING" }), 400);
+        }
+      }, 60);
+      return () => clearInterval(dealInterval);
+    }, 1800);
+    return () => clearTimeout(shuffleTimer);
+  }, [state.phase]);
 
   // ─── Trio Check ───────────────────────────────────────────────────────────
   useEffect(() => {
-    if (state.phase === "trio_check") {
-      const trios = findTrios(myHand);
-      if (trios.length > 0) setShowTrioModal(true);
+    if (state.phase !== "trio_check") return;
 
-      state.players.forEach((p) => {
-        if (p.userId.startsWith("bot-") && p.hand.length > 0) {
-          const botTrios = findTrios(p.hand);
-          if (botTrios.length > 0) {
-            dispatch({ type: "DECLARE_TRIO", seat: p.seat, trio: botTrios[0] });
-            addLog(`${p.name} declared Trio of ${botTrios[0].rank}s!`, "trio");
-          } else {
-            dispatch({ type: "DECLINE_TRIO", seat: p.seat });
-          }
+    const myTrios = findTrios(myHand);
+    let humanHasTrio = myTrios.length > 0;
+
+    // Process bot trios
+    state.players.forEach((p) => {
+      if (p.userId.startsWith("bot-") && p.hand.length > 0) {
+        const botTrios = findTrios(p.hand);
+        if (botTrios.length > 0) {
+          dispatch({ type: "DECLARE_TRIO", seat: p.seat, trio: botTrios[0] });
+          addLog(`${p.name} declared Trio of ${botTrios[0].rank}s!`, "trio");
+        } else {
+          dispatch({ type: "DECLINE_TRIO", seat: p.seat });
         }
-      });
+      }
+    });
+
+    if (humanHasTrio) {
+      // Show trio modal for the human player
+      setShowTrioModal(true);
+    } else {
+      // No trio for human - auto-decline and advance after a short delay
+      dispatch({ type: "DECLINE_TRIO", seat: mySeat });
+      addLog("No trios found. Starting play...", "system");
+      const timer = setTimeout(() => {
+        dispatch({ type: "FINISH_TRIO_CHECK" });
+      }, 1500);
+      return () => clearTimeout(timer);
     }
-  }, [state.phase === "trio_check"]);
+  }, [state.phase]);
 
   // ─── Detect trick completion ──────────────────────────────────────────────
   useEffect(() => {

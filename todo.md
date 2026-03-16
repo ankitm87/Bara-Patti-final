@@ -72,3 +72,10 @@
 - [x] Integrate trick win sound when a trick is won
 - [x] Add mute toggle to game screen UI
 - [x] Persist mute preference with AsyncStorage
+
+## Bug Fixes
+
+- [x] Fix: User unable to play the game / see shuffling / hear sounds
+- [x] Investigate game flow - can user reach the game screen?
+- [x] Check if sound files are valid (not 0-byte)
+- [x] Verify Create Game flow works end-to-end without auth requirement
