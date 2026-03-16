@@ -96,30 +96,44 @@ export default function GameScreen() {
     ]);
   }, []);
 
-  // ─── Bot Auto-play ────────────────────────────────────────────────────────
+  // ─── Bot Auto-play & Timeout Auto-play ────────────────────────────────────
   useEffect(() => {
     if (state.phase !== "playing") return;
     if (state.currentPlayerSeat === mySeat) return;
     if (!state.trumpSuit) return;
 
-    const botPlayer = state.players.find((p) => p.seat === state.currentPlayerSeat);
-    if (!botPlayer || !botPlayer.userId.startsWith("bot-")) return;
+    const currentPlayer = state.players.find((p) => p.seat === state.currentPlayerSeat);
+    if (!currentPlayer) return;
+
+    const isBot = currentPlayer.userId.startsWith("bot-");
+    // Bots play quickly (0.6-1.6s), human players get full timer then auto-play
+    const delay = isBot
+      ? 600 + Math.random() * 1000
+      : (TURN_TIME_SECONDS + 1) * 1000; // Wait for their timer to expire + 1s buffer
 
     const timer = setTimeout(() => {
-      const botValid = getValidCards(
-        botPlayer.hand,
+      const validForPlayer = getValidCards(
+        currentPlayer.hand,
         state.currentTrick,
         state.trumpSuit!,
         state.completedTricks.length === 0,
         !state.currentTrick || state.currentTrick.cards.length === 0
       );
-      if (botValid.length > 0) {
-        const card = botValid[Math.floor(Math.random() * botValid.length)];
-        addLog(`${botPlayer.name} played ${getCardDisplay(card)}`);
+      if (validForPlayer.length > 0) {
+        // Play lowest legal card (smart auto-play)
+        const sorted = [...validForPlayer].sort((a, b) => RANK_ORDER[a.rank] - RANK_ORDER[b.rank]);
+        const card = isBot
+          ? validForPlayer[Math.floor(Math.random() * validForPlayer.length)]
+          : sorted[0];
+        addLog(
+          isBot
+            ? `${currentPlayer.name} played ${getCardDisplay(card)}`
+            : `${currentPlayer.name} timed out — auto-played ${getCardDisplay(card)}`
+        );
         playCardPlay();
         dispatch({ type: "PLAY_CARD", seat: state.currentPlayerSeat, card });
       }
-    }, 600 + Math.random() * 1000);
+    }, delay);
 
     return () => clearTimeout(timer);
   }, [state.currentPlayerSeat, state.phase, state.currentTrick?.cards.length]);

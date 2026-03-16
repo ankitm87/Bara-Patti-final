@@ -115,3 +115,8 @@
 - [x] Custom text chat option
 - [x] Different sound for winning a hand vs others winning
 - [x] Fix: Activity log cut off on right side on mobile - not readable
+
+## V7 Fixes
+
+- [x] Fix: Game still freezes after winning the first hand in bot play (cannot play second hand)
+- [x] Add auto-play for timed-out players in group games (computer assigns card based on logic)

@@ -185,7 +185,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       if (state.phase !== "trick_complete") return state;
 
       const lastTrick = state.completedTricks[state.completedTricks.length - 1];
-      if (!lastTrick || !lastTrick.winnerSeat) return state;
+      if (!lastTrick || lastTrick.winnerSeat == null) return state;
 
       const isLastTrick = state.completedTricks.length === 12;
 
