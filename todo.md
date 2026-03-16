@@ -1,0 +1,35 @@
+# Project TODO
+
+- [x] App branding - custom icon, theme colors, app name
+- [x] Theme configuration - green card table colors
+- [x] Navigation structure - tabs + modal stack
+- [x] Icon mappings for tab bar
+- [x] Login screen with Manus OAuth sign-in
+- [x] Home screen - create/join game buttons, recent games
+- [x] Profile screen - user info, stats, logout
+- [x] Game history screen
+- [ ] Database schema - rooms, players, rounds, tricks, scores
+- [ ] Server API - room creation, joining, game state management
+- [x] Create room screen with invite code generation
+- [x] Join room screen with code input
+- [x] WhatsApp sharing of invite code
+- [x] Lobby screen with 4 player slots and ready status
+- [x] Game engine - 48-card deck (no 2s), dealing logic
+- [x] Trump determination - last card to dealer
+- [x] Trio detection logic
+- [x] Opposite suit starting rule (Ace of opposite suit)
+- [x] Trump escalation rule - must play higher trump
+- [x] Card rendering - all 48 cards with suits and values
+- [x] Card dealing animation
+- [x] Card shuffling animation
+- [x] Trump reveal screen with 20-second countdown
+- [x] Trio declaration modal with 20-second window
+- [x] Game table UI - 4 player positions, play area
+- [x] 20-second turn timer per player
+- [x] Trick-taking gameplay flow
+- [x] Hand counting and scoring logic
+- [x] Round summary screen with score breakdown
+- [x] Dealer rotation between rounds
+- [x] Keep screen awake during gameplay
+- [x] Game engine unit tests (47 tests passing)
+- [x] Bot players for single-player testing
