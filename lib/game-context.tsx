@@ -55,11 +55,15 @@ function gameReducer(state: GameState, action: GameAction): GameState {
     case "JOIN_ROOM":
       return { ...state, roomId: action.roomId };
 
-    case "ADD_PLAYER":
+    case "ADD_PLAYER": {
+      // Guard: reject if seat already taken or 4 players already exist
+      if (state.players.length >= 4) return state;
+      if (state.players.some((p) => p.seat === action.player.seat)) return state;
       return {
         ...state,
         players: [...state.players, action.player],
       };
+    }
 
     case "REMOVE_PLAYER":
       return {
@@ -236,7 +240,18 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       };
     }
 
-    case "NEXT_ROUND":
+    case "NEXT_ROUND": {
+      // Reset player state for next round and ensure max 4 players sorted by seat
+      const resetPlayers = state.players
+        .slice(0, 4)
+        .sort((a, b) => a.seat - b.seat)
+        .map((p) => ({
+          ...p,
+          hand: [] as Card[],
+          handsWon: 0,
+          isReady: true,
+          hasDeclinedTrio: false,
+        }));
       return {
         ...state,
         dealerSeat: rotateDealer(state.dealerSeat),
@@ -244,7 +259,10 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         winningTrio: null,
         completedTricks: [],
         currentTrick: null,
+        players: resetPlayers,
+        turnStartTime: null,
       };
+    }
 
     case "SET_PHASE":
       return { ...state, phase: action.phase, phaseStartTime: Date.now() };

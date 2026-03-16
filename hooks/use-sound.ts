@@ -22,7 +22,7 @@ export function useSound() {
   }, []);
 
   const playSound = useCallback(
-    (name: "shuffle" | "cardPlay" | "trickWin") => {
+    (name: "shuffle" | "cardPlay" | "myWin" | "otherWin") => {
       soundManager.play(name);
     },
     []
@@ -34,6 +34,7 @@ export function useSound() {
     playSound,
     playShuffle: useCallback(() => soundManager.play("shuffle"), []),
     playCardPlay: useCallback(() => soundManager.play("cardPlay"), []),
-    playTrickWin: useCallback(() => soundManager.play("trickWin"), []),
+    playMyWin: useCallback(() => soundManager.play("myWin"), []),
+    playOtherWin: useCallback(() => soundManager.play("otherWin"), []),
   };
 }

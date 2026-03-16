@@ -386,9 +386,9 @@ export function startNewRound(state: GameState): GameState {
   const deck = shuffleDeck(createDeck());
   const { hands, trumpCard } = dealCards(deck, state.dealerSeat);
 
-  const updatedPlayers = state.players.map((p, i) => ({
+  const updatedPlayers = state.players.map((p) => ({
     ...p,
-    hand: hands[i],
+    hand: hands[p.seat],
     handsWon: 0,
     hasDeclinedTrio: false,
   }));

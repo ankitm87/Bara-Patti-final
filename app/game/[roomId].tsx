@@ -20,6 +20,7 @@ import { TrumpBanner } from "@/components/trump-banner";
 import { TrickScoreboard } from "@/components/trick-scoreboard";
 import { ActivityLog, LogEntry } from "@/components/activity-log";
 import { LegalMoveHint } from "@/components/legal-move-hint";
+import { ChatBubble } from "@/components/chat-bubble";
 import {
   Card,
   Seat,
@@ -61,7 +62,7 @@ export default function GameScreen() {
   const [activityLog, setActivityLog] = useState<LogEntry[]>([]);
   const [trickWinnerSeat, setTrickWinnerSeat] = useState<Seat | null>(null);
   const logIdRef = useRef(0);
-  const { muted, toggleMute, playShuffle, playCardPlay, playTrickWin } = useSound();
+  const { muted, toggleMute, playShuffle, playCardPlay, playMyWin, playOtherWin } = useSound();
   const saveRoundMutation = trpc.leaderboard.saveRound.useMutation();
   const [groupName, setGroupName] = useState("Family");
 
@@ -188,7 +189,11 @@ export default function GameScreen() {
     const winner = state.players.find((p) => p.seat === state.currentTrick!.winnerSeat);
     if (winner) {
       setTrickWinnerSeat(state.currentTrick.winnerSeat);
-      playTrickWin();
+      if (state.currentTrick!.winnerSeat === mySeat) {
+        playMyWin();
+      } else {
+        playOtherWin();
+      }
       addLog(`${winner.seat === mySeat ? "You" : winner.name} won the hand!`, "trick_win");
     }
 
@@ -409,6 +414,7 @@ export default function GameScreen() {
               player={state.players.find((p) => p.seat === 2)}
               isActive={state.currentPlayerSeat === 2 && state.phase === "playing"}
               isDealer={state.dealerSeat === 2}
+              hasTrio={state.winningTrio?.seat === 2}
               position="top"
               mySeat={mySeat}
               onTimerComplete={handleAutoPlay}
@@ -424,6 +430,7 @@ export default function GameScreen() {
                 player={state.players.find((p) => p.seat === 1)}
                 isActive={state.currentPlayerSeat === 1 && state.phase === "playing"}
                 isDealer={state.dealerSeat === 1}
+                hasTrio={state.winningTrio?.seat === 1}
                 position="left"
                 mySeat={mySeat}
                 onTimerComplete={handleAutoPlay}
@@ -462,6 +469,7 @@ export default function GameScreen() {
                 player={state.players.find((p) => p.seat === 3)}
                 isActive={state.currentPlayerSeat === 3 && state.phase === "playing"}
                 isDealer={state.dealerSeat === 3}
+                hasTrio={state.winningTrio?.seat === 3}
                 position="right"
                 mySeat={mySeat}
                 onTimerComplete={handleAutoPlay}
@@ -563,6 +571,9 @@ export default function GameScreen() {
           </ScrollView>
         </View>
       </View>
+
+      {/* ─── Chat Bubble ───────────────────────────────────────────────── */}
+      <ChatBubble playerName={user?.name || "You"} />
 
       {/* ─── Trio Declaration Modal ──────────────────────────────────────── */}
       <Modal visible={showTrioModal && state.phase === "trio_check"} transparent animationType="fade">
@@ -886,6 +897,7 @@ const styles = StyleSheet.create({
     position: "absolute",
     bottom: 8,
     right: 4,
+    maxWidth: SCREEN_WIDTH * 0.45,
   },
   // ─── My Hand Area ─────────────────────────────────────────────────────
   myArea: {

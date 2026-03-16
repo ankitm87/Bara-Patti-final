@@ -59,8 +59,8 @@ const styles = StyleSheet.create({
     backgroundColor: "#0D3B0F99",
     borderRadius: 10,
     paddingVertical: 6,
-    paddingHorizontal: 10,
-    maxWidth: 220,
+    paddingHorizontal: 8,
+    maxWidth: 170,
   },
   header: {
     flexDirection: "row",

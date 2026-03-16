@@ -20,6 +20,8 @@ export default function HomeScreen() {
   const handleQuickPlay = () => {
     // Generate a room code
     const code = `QP${Date.now().toString(36).slice(-4).toUpperCase()}`;
+    // Reset state first to prevent duplicate players from stale state
+    dispatch({ type: "RESET" });
     dispatch({ type: "CREATE_ROOM", roomId: code });
 
     // Add the human player at seat 0

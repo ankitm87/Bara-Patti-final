@@ -103,3 +103,15 @@
 - [x] Server API endpoints for leaderboard CRUD
 - [x] Leaderboard UI screen with group filtering
 - [x] Store game results after each round/session
+
+## V6 Fixes & Features
+
+- [x] Fix: Game freezes after winning a hand - "two children with same key" error
+- [x] Add crown icon next to trio winner (e.g. Chachu has winning trio → crown skin)
+- [x] Add disappearing push chat messages (5s auto-dismiss) with pre-filled options
+- [x] Pre-filled chat: "Badh badh ke aaiye"
+- [x] Pre-filled chat: "Naadri banenge ab"
+- [x] Pre-filled chat: "Humpe naa hai lalli"
+- [x] Custom text chat option
+- [x] Different sound for winning a hand vs others winning
+- [x] Fix: Activity log cut off on right side on mobile - not readable

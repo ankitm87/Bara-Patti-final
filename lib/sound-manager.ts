@@ -14,7 +14,8 @@ import { Platform } from "react-native";
 const SOUNDS = {
   shuffle: require("@/assets/sounds/card-shuffle.mp3"),
   cardPlay: require("@/assets/sounds/card-play.mp3"),
-  trickWin: require("@/assets/sounds/trick-win.mp3"),
+  myWin: require("@/assets/sounds/my-win.wav"),
+  otherWin: require("@/assets/sounds/other-win.wav"),
 } as const;
 
 type SoundName = keyof typeof SOUNDS;
