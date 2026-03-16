@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import {
   View,
   Text,
@@ -15,6 +15,11 @@ import { useAuth } from "@/hooks/use-auth";
 import { useGame } from "@/lib/game-context";
 import { PlayingCard } from "@/components/playing-card";
 import { CountdownTimer } from "@/components/countdown-timer";
+import { PlayerPanel } from "@/components/player-panel";
+import { TrumpBanner } from "@/components/trump-banner";
+import { TrickScoreboard } from "@/components/trick-scoreboard";
+import { ActivityLog, LogEntry } from "@/components/activity-log";
+import { LegalMoveHint } from "@/components/legal-move-hint";
 import {
   Card,
   Seat,
@@ -26,6 +31,7 @@ import {
   findTrios,
   determineTrickWinner,
   calculateRoundScores,
+  getCardDisplay,
   TURN_TIME_SECONDS,
   REVEAL_TIME_SECONDS,
   TRIO_TIME_SECONDS,
@@ -35,11 +41,9 @@ import {
 } from "@/lib/game-engine";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 
-const { width: SCREEN_WIDTH } = Dimensions.get("window");
-const CARD_WIDTH = 56;
-const CARD_OVERLAP = 20;
-
-const SEAT_COLORS = ["#4CAF50", "#2196F3", "#FF9800", "#E91E63"];
+const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("window");
+const CARD_WIDTH_MY = 62;
+const CARD_OVERLAP_MY = 22;
 
 export default function GameScreen() {
   const router = useRouter();
@@ -49,105 +53,95 @@ export default function GameScreen() {
   const [selectedCard, setSelectedCard] = useState<Card | null>(null);
   const [showTrioModal, setShowTrioModal] = useState(false);
   const [showRoundEnd, setShowRoundEnd] = useState(false);
-  const [trickAnimation, setTrickAnimation] = useState(false);
   const [dealingCardIndex, setDealingCardIndex] = useState(0);
   const [showShuffling, setShowShuffling] = useState(false);
+  const [activityLog, setActivityLog] = useState<LogEntry[]>([]);
+  const [trickWinnerSeat, setTrickWinnerSeat] = useState<Seat | null>(null);
+  const logIdRef = useRef(0);
 
-  const mySeat: Seat = 0; // Current player is always seat 0 in local view
+  const mySeat: Seat = 0;
   const myPlayer = state.players.find((p) => p.seat === mySeat);
   const myHand = myPlayer?.hand || [];
 
-  // Get valid cards for current player
-  const validCards =
-    state.phase === "playing" && state.currentPlayerSeat === mySeat && state.trumpSuit
-      ? getValidCards(
-          myHand,
-          state.currentTrick,
-          state.trumpSuit,
-          state.completedTricks.length === 0,
-          !state.currentTrick || state.currentTrick.cards.length === 0
-        )
-      : [];
+  const isMyTurn = state.phase === "playing" && state.currentPlayerSeat === mySeat;
+  const isFirstTrick = state.completedTricks.length === 0;
+  const isFirstCard = !state.currentTrick || state.currentTrick.cards.length === 0;
 
-  // Auto-play for bot players
+  const validCards = useMemo(() => {
+    if (!isMyTurn || !state.trumpSuit) return [];
+    return getValidCards(myHand, state.currentTrick, state.trumpSuit, isFirstTrick, isFirstCard);
+  }, [isMyTurn, state.trumpSuit, myHand, state.currentTrick, isFirstTrick, isFirstCard]);
+
+  // ─── Activity Log Helper ──────────────────────────────────────────────────
+  const addLog = useCallback((text: string, type: LogEntry["type"] = "play") => {
+    logIdRef.current++;
+    setActivityLog((prev) => [
+      { id: String(logIdRef.current), text, type, timestamp: Date.now() },
+      ...prev.slice(0, 49),
+    ]);
+  }, []);
+
+  // ─── Bot Auto-play ────────────────────────────────────────────────────────
   useEffect(() => {
     if (state.phase !== "playing") return;
-    if (state.currentPlayerSeat === mySeat) return; // Human player
+    if (state.currentPlayerSeat === mySeat) return;
     if (!state.trumpSuit) return;
 
     const botPlayer = state.players.find((p) => p.seat === state.currentPlayerSeat);
     if (!botPlayer || !botPlayer.userId.startsWith("bot-")) return;
 
-    // Bot plays after a short delay
     const timer = setTimeout(() => {
-      const botValidCards = getValidCards(
+      const botValid = getValidCards(
         botPlayer.hand,
         state.currentTrick,
         state.trumpSuit!,
         state.completedTricks.length === 0,
         !state.currentTrick || state.currentTrick.cards.length === 0
       );
-
-      if (botValidCards.length > 0) {
-        // Simple bot: play random valid card
-        const randomCard =
-          botValidCards[Math.floor(Math.random() * botValidCards.length)];
-        dispatch({
-          type: "PLAY_CARD",
-          seat: state.currentPlayerSeat,
-          card: randomCard,
-        });
+      if (botValid.length > 0) {
+        const card = botValid[Math.floor(Math.random() * botValid.length)];
+        addLog(`${botPlayer.name} played ${getCardDisplay(card)}`);
+        dispatch({ type: "PLAY_CARD", seat: state.currentPlayerSeat, card });
       }
-    }, 800 + Math.random() * 1200);
+    }, 600 + Math.random() * 1000);
 
     return () => clearTimeout(timer);
   }, [state.currentPlayerSeat, state.phase, state.currentTrick?.cards.length]);
 
-  // Handle dealing phase animation
+  // ─── Dealing Animation ────────────────────────────────────────────────────
   useEffect(() => {
     if (state.phase === "dealing") {
       setShowShuffling(true);
+      setActivityLog([]);
       const shuffleTimer = setTimeout(() => {
         setShowShuffling(false);
-        // Simulate dealing animation
         let cardIdx = 0;
         const dealInterval = setInterval(() => {
           cardIdx++;
           setDealingCardIndex(cardIdx);
           if (cardIdx >= 48) {
             clearInterval(dealInterval);
-            // Move to trump reveal
-            setTimeout(() => {
-              dispatch({ type: "FINISH_DEALING" });
-            }, 500);
+            setTimeout(() => dispatch({ type: "FINISH_DEALING" }), 400);
           }
-        }, 80);
+        }, 60);
         return () => clearInterval(dealInterval);
-      }, 2000);
+      }, 1800);
       return () => clearTimeout(shuffleTimer);
     }
   }, [state.phase === "dealing"]);
 
-  // Handle trump reveal phase
-  useEffect(() => {
-    if (state.phase === "trump_reveal") {
-      // Auto-advance after reveal time
-    }
-  }, [state.phase]);
-
-  // Handle trio check
+  // ─── Trio Check ───────────────────────────────────────────────────────────
   useEffect(() => {
     if (state.phase === "trio_check") {
       const trios = findTrios(myHand);
-      if (trios.length > 0) {
-        setShowTrioModal(true);
-      }
-      // Bot trio declarations
+      if (trios.length > 0) setShowTrioModal(true);
+
       state.players.forEach((p) => {
         if (p.userId.startsWith("bot-") && p.hand.length > 0) {
           const botTrios = findTrios(p.hand);
           if (botTrios.length > 0) {
             dispatch({ type: "DECLARE_TRIO", seat: p.seat, trio: botTrios[0] });
+            addLog(`${p.name} declared Trio of ${botTrios[0].rank}s!`, "trio");
           } else {
             dispatch({ type: "DECLINE_TRIO", seat: p.seat });
           }
@@ -156,29 +150,47 @@ export default function GameScreen() {
     }
   }, [state.phase === "trio_check"]);
 
-  // Handle round end
+  // ─── Detect trick completion ──────────────────────────────────────────────
   useEffect(() => {
-    if (state.phase === "round_end") {
-      setShowRoundEnd(true);
+    if (state.currentTrick?.winnerSeat != null) {
+      const winner = state.players.find((p) => p.seat === state.currentTrick!.winnerSeat);
+      if (winner) {
+        setTrickWinnerSeat(state.currentTrick.winnerSeat);
+        addLog(`${winner.seat === mySeat ? "You" : winner.name} won the trick!`, "trick_win");
+        setTimeout(() => setTrickWinnerSeat(null), 1200);
+      }
     }
+  }, [state.currentTrick?.winnerSeat]);
+
+  // ─── Round End ────────────────────────────────────────────────────────────
+  useEffect(() => {
+    if (state.phase === "round_end") setShowRoundEnd(true);
   }, [state.phase]);
 
+  // ─── Handlers ─────────────────────────────────────────────────────────────
   const handlePlayCard = (card: Card) => {
-    if (state.currentPlayerSeat !== mySeat) return;
+    if (!isMyTurn) return;
     if (!validCards.some((c) => c.id === card.id)) return;
-
+    addLog(`You played ${getCardDisplay(card)}`);
     dispatch({ type: "PLAY_CARD", seat: mySeat, card });
     setSelectedCard(null);
   };
 
-  const handleTrumpRevealDone = () => {
-    dispatch({ type: "FINISH_TRUMP_REVEAL" });
+  const handleAutoPlay = () => {
+    if (validCards.length > 0) {
+      // Play lowest legal card
+      const sorted = [...validCards].sort((a, b) => RANK_ORDER[a.rank] - RANK_ORDER[b.rank]);
+      handlePlayCard(sorted[0]);
+    }
   };
+
+  const handleTrumpRevealDone = () => dispatch({ type: "FINISH_TRUMP_REVEAL" });
 
   const handleTrioDeclare = () => {
     const trios = findTrios(myHand);
     if (trios.length > 0) {
       dispatch({ type: "DECLARE_TRIO", seat: mySeat, trio: trios[0] });
+      addLog(`You declared Trio of ${trios[0].rank}s!`, "trio");
     }
     setShowTrioModal(false);
   };
@@ -197,339 +209,80 @@ export default function GameScreen() {
     dispatch({ type: "END_ROUND" });
     dispatch({ type: "NEXT_ROUND" });
     setShowRoundEnd(false);
-    // Start new round
-    setTimeout(() => {
-      dispatch({ type: "START_DEALING" });
-    }, 500);
+    setTimeout(() => dispatch({ type: "START_DEALING" }), 500);
   };
 
-  const handleAutoPlay = () => {
-    if (validCards.length > 0) {
-      handlePlayCard(validCards[0]);
-    }
-  };
-
-  // ─── Render Helpers ──────────────────────────────────────────────────────
-
-  const renderOpponentHand = (seat: Seat, position: "top" | "left" | "right") => {
-    const player = state.players.find((p) => p.seat === seat);
-    if (!player) return null;
-
-    const cardCount = player.hand.length;
-    const isActive = state.currentPlayerSeat === seat && state.phase === "playing";
-
-    return (
-      <View
-        style={[
-          styles.opponentArea,
-          position === "top" && styles.opponentTop,
-          position === "left" && styles.opponentLeft,
-          position === "right" && styles.opponentRight,
-        ]}
-      >
-        <View style={styles.opponentInfo}>
-          <View
-            style={[
-              styles.opponentAvatar,
-              { backgroundColor: SEAT_COLORS[seat] },
-              isActive && styles.activePlayerBorder,
-            ]}
-          >
-            <Text style={styles.opponentAvatarText}>
-              {player.odInitials || player.name[0]}
-            </Text>
-          </View>
-          <Text style={styles.opponentName} numberOfLines={1}>
-            {player.name}
-          </Text>
-          <View style={styles.handsBadge}>
-            <Text style={styles.handsBadgeText}>{player.handsWon}</Text>
-          </View>
-        </View>
-        <View
-          style={[
-            styles.opponentCards,
-            position === "left" && styles.opponentCardsVertical,
-            position === "right" && styles.opponentCardsVertical,
-          ]}
-        >
-          {Array.from({ length: Math.min(cardCount, 6) }).map((_, i) => (
-            <View
-              key={i}
-              style={[
-                position === "top"
-                  ? { marginLeft: i > 0 ? -12 : 0 }
-                  : { marginTop: i > 0 ? -30 : 0 },
-              ]}
-            >
-              <PlayingCard card={null} faceDown size="small" />
-            </View>
-          ))}
-          {cardCount > 6 && (
-            <Text style={styles.moreCards}>+{cardCount - 6}</Text>
-          )}
-        </View>
-        {isActive && (
-          <CountdownTimer
-            seconds={TURN_TIME_SECONDS}
-            size={28}
-            onComplete={handleAutoPlay}
-          />
-        )}
-      </View>
-    );
-  };
-
-  const renderPlayArea = () => {
-    const trickCards = state.currentTrick?.cards || [];
-
-    return (
-      <View style={styles.playArea}>
-        {/* Trick cards in center */}
-        <View style={styles.trickCards}>
-          {[2, 1, 3, 0].map((seat) => {
-            const played = trickCards.find((c) => c.seat === seat);
-            const pos =
-              seat === 0
-                ? styles.trickSouth
-                : seat === 1
-                ? styles.trickWest
-                : seat === 2
-                ? styles.trickNorth
-                : styles.trickEast;
-
-            return (
-              <View key={seat} style={[styles.trickCardPosition, pos]}>
-                {played ? (
-                  <PlayingCard card={played.card} size="medium" />
-                ) : (
-                  <View style={styles.trickCardPlaceholder} />
-                )}
-              </View>
-            );
-          })}
-        </View>
-
-        {/* Trump indicator */}
-        {state.trumpCard && state.trumpSuit && (
-          <View style={styles.trumpIndicator}>
-            <Text style={styles.trumpLabel}>Trump</Text>
-            <Text
-              style={[
-                styles.trumpSuit,
-                {
-                  color:
-                    getSuitColor(state.trumpSuit) === "red"
-                      ? "#E53935"
-                      : "#FFFFFF",
-                },
-              ]}
-            >
-              {getSuitSymbol(state.trumpSuit)}
-            </Text>
-          </View>
-        )}
-
-        {/* Trick count */}
-        <View style={styles.trickCount}>
-          <Text style={styles.trickCountText}>
-            Trick {state.completedTricks.length + 1}/12
-          </Text>
-        </View>
-      </View>
-    );
-  };
-
-  const renderMyHand = () => {
-    const isMyTurn = state.currentPlayerSeat === mySeat && state.phase === "playing";
-    const handWidth = myHand.length * (CARD_WIDTH - CARD_OVERLAP) + CARD_OVERLAP;
-
-    return (
-      <View style={styles.myHandArea}>
-        {/* Player info bar */}
-        <View style={styles.myInfo}>
-          <View style={styles.myInfoLeft}>
-            <View
-              style={[
-                styles.myAvatar,
-                isMyTurn && styles.activePlayerBorder,
-              ]}
-            >
-              <Text style={styles.myAvatarText}>
-                {myPlayer?.odInitials || "Y"}
-              </Text>
-            </View>
-            <View>
-              <Text style={styles.myName}>You</Text>
-              <Text style={styles.myHands}>
-                Hands: {myPlayer?.handsWon || 0}
-              </Text>
-            </View>
-          </View>
-          {isMyTurn && (
-            <CountdownTimer
-              seconds={TURN_TIME_SECONDS}
-              size={36}
-              label="Your Turn"
-              showLabel
-              onComplete={handleAutoPlay}
-            />
-          )}
-        </View>
-
-        {/* Cards */}
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={[
-            styles.myCards,
-            { minWidth: handWidth },
-          ]}
-        >
-          {myHand.map((card, i) => {
-            const isValid = validCards.some((c) => c.id === card.id);
-            const isSelected = selectedCard?.id === card.id;
-
-            return (
-              <TouchableOpacity
-                key={card.id}
-                style={[
-                  styles.myCardWrapper,
-                  { marginLeft: i > 0 ? -CARD_OVERLAP : 0 },
-                  isSelected && styles.myCardSelected,
-                  !isValid && isMyTurn && styles.myCardDimmed,
-                ]}
-                onPress={() => {
-                  if (!isMyTurn) return;
-                  if (!isValid) return;
-                  if (isSelected) {
-                    handlePlayCard(card);
-                  } else {
-                    setSelectedCard(card);
-                  }
-                }}
-                activeOpacity={isValid && isMyTurn ? 0.7 : 1}
-              >
-                <PlayingCard
-                  card={card}
-                  size="medium"
-                  highlighted={isSelected}
-                  dimmed={!isValid && isMyTurn}
-                />
-              </TouchableOpacity>
-            );
-          })}
-        </ScrollView>
-
-        {isMyTurn && selectedCard && (
-          <TouchableOpacity
-            style={styles.playButton}
-            onPress={() => handlePlayCard(selectedCard)}
-            activeOpacity={0.8}
-          >
-            <Text style={styles.playButtonText}>Play Card</Text>
-          </TouchableOpacity>
-        )}
-      </View>
-    );
-  };
-
-  // ─── Phase-specific overlays ─────────────────────────────────────────────
-
+  // ─── Dealing / Shuffling Overlay ──────────────────────────────────────────
   if (state.phase === "dealing" || showShuffling) {
     return (
       <ScreenContainer edges={["top", "bottom", "left", "right"]}>
-        <View style={styles.overlayContainer}>
-          <View style={styles.dealingOverlay}>
-            {showShuffling ? (
-              <>
-                <View style={styles.shuffleCards}>
-                  {[0, 1, 2, 3, 4].map((i) => (
-                    <View
-                      key={i}
-                      style={[
-                        styles.shuffleCard,
-                        {
-                          transform: [
-                            { rotate: `${(i - 2) * 15}deg` },
-                            { translateY: Math.sin(i) * 10 },
-                          ],
-                        },
-                      ]}
-                    >
-                      <PlayingCard card={null} faceDown size="large" />
-                    </View>
-                  ))}
-                </View>
-                <Text style={styles.dealingText}>Shuffling...</Text>
-              </>
-            ) : (
-              <>
-                <Text style={styles.dealingText}>Dealing Cards</Text>
-                <Text style={styles.dealingCount}>
-                  {dealingCardIndex}/48
-                </Text>
-                <View style={styles.dealingProgress}>
+        <View style={styles.overlayCenter}>
+          {showShuffling ? (
+            <View style={styles.shuffleContainer}>
+              <View style={styles.shuffleCards}>
+                {[0, 1, 2, 3, 4].map((i) => (
                   <View
+                    key={i}
                     style={[
-                      styles.dealingProgressBar,
-                      { width: `${(dealingCardIndex / 48) * 100}%` },
+                      styles.shuffleCard,
+                      { transform: [{ rotate: `${(i - 2) * 12}deg` }, { translateY: Math.sin(i * 1.2) * 8 }] },
                     ]}
-                  />
-                </View>
-              </>
-            )}
-          </View>
+                  >
+                    <PlayingCard card={null} faceDown size="large" />
+                  </View>
+                ))}
+              </View>
+              <Text style={styles.overlayTitle}>Shuffling Cards...</Text>
+            </View>
+          ) : (
+            <View style={styles.dealingContainer}>
+              <Text style={styles.overlayTitle}>Dealing Cards</Text>
+              <Text style={styles.dealingCount}>{dealingCardIndex} / 48</Text>
+              <View style={styles.progressTrack}>
+                <View style={[styles.progressBar, { width: `${(dealingCardIndex / 48) * 100}%` }]} />
+              </View>
+              <View style={styles.dealingTargets}>
+                {[0, 1, 2, 3].map((s) => {
+                  const p = state.players[s];
+                  return (
+                    <View key={s} style={styles.dealTarget}>
+                      <View style={[styles.dealTargetDot, { backgroundColor: ["#4ADE80", "#60A5FA", "#FB923C", "#F472B6"][s] }]} />
+                      <Text style={styles.dealTargetName}>{p?.name || `P${s + 1}`}</Text>
+                    </View>
+                  );
+                })}
+              </View>
+            </View>
+          )}
         </View>
       </ScreenContainer>
     );
   }
 
+  // ─── Trump Reveal Overlay ─────────────────────────────────────────────────
   if (state.phase === "trump_reveal") {
+    const oppSuit = state.trumpSuit ? getOppositeSuit(state.trumpSuit) : null;
     return (
       <ScreenContainer edges={["top", "bottom", "left", "right"]}>
-        <View style={styles.overlayContainer}>
-          <View style={styles.trumpReveal}>
-            <Text style={styles.trumpRevealTitle}>Trump Card</Text>
-            <View style={styles.trumpRevealCard}>
-              {state.trumpCard && (
-                <PlayingCard card={state.trumpCard} size="large" highlighted />
+        <View style={styles.overlayCenter}>
+          <View style={styles.trumpRevealBox}>
+            <Text style={styles.trumpRevealTitle}>Trump Card Revealed</Text>
+            <View style={styles.trumpRevealCardWrap}>
+              {state.trumpCard && <PlayingCard card={state.trumpCard} size="xlarge" highlighted />}
+            </View>
+            <View style={styles.trumpRevealInfo}>
+              <Text style={[styles.trumpRevealSuit, { color: state.trumpSuit && getSuitColor(state.trumpSuit) === "red" ? "#EF4444" : "#E8F5E9" }]}>
+                {state.trumpSuit ? `${getSuitSymbol(state.trumpSuit)} ${state.trumpSuit.charAt(0).toUpperCase() + state.trumpSuit.slice(1)}` : ""}
+              </Text>
+              {oppSuit && (
+                <Text style={styles.trumpRevealHint}>
+                  Game starts with A{getSuitSymbol(oppSuit)}
+                </Text>
               )}
             </View>
-            <Text
-              style={[
-                styles.trumpRevealSuit,
-                {
-                  color:
-                    state.trumpSuit && getSuitColor(state.trumpSuit) === "red"
-                      ? "#E53935"
-                      : "#FFFFFF",
-                },
-              ]}
-            >
-              {state.trumpSuit ? getSuitSymbol(state.trumpSuit) : ""}{" "}
-              {state.trumpSuit
-                ? state.trumpSuit.charAt(0).toUpperCase() + state.trumpSuit.slice(1)
-                : ""}
-            </Text>
-            <Text style={styles.trumpRevealHint}>
-              Game starts with Ace of{" "}
-              {state.trumpSuit
-                ? getOppositeSuit(state.trumpSuit).charAt(0).toUpperCase() +
-                  getOppositeSuit(state.trumpSuit).slice(1)
-                : ""}
-            </Text>
-            <CountdownTimer
-              seconds={REVEAL_TIME_SECONDS}
-              size={56}
-              onComplete={handleTrumpRevealDone}
-            />
-            <TouchableOpacity
-              style={styles.gotItButton}
-              onPress={handleTrumpRevealDone}
-              activeOpacity={0.8}
-            >
-              <Text style={styles.gotItText}>Got it</Text>
+            <CountdownTimer seconds={REVEAL_TIME_SECONDS} size={56} strokeWidth={4} onComplete={handleTrumpRevealDone} />
+            <TouchableOpacity style={styles.goldButton} onPress={handleTrumpRevealDone} activeOpacity={0.8}>
+              <Text style={styles.goldButtonText}>Got it</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -537,137 +290,286 @@ export default function GameScreen() {
     );
   }
 
-  // ─── Main Game View ──────────────────────────────────────────────────────
+  // ─── Main Game View ───────────────────────────────────────────────────────
+  const trickCards = state.currentTrick?.cards || [];
+  const lastCompletedTrick = state.completedTricks.length > 0 ? state.completedTricks[state.completedTricks.length - 1] : null;
 
   return (
     <ScreenContainer edges={["top", "left", "right"]}>
-      <View style={styles.gameContainer}>
-        {/* Top opponent */}
-        {renderOpponentHand(2 as Seat, "top")}
-
-        {/* Middle row: left opponent, play area, right opponent */}
-        <View style={styles.middleRow}>
-          {renderOpponentHand(1 as Seat, "left")}
-          {renderPlayArea()}
-          {renderOpponentHand(3 as Seat, "right")}
-        </View>
-
-        {/* My hand */}
-        {renderMyHand()}
+      <View style={styles.gameRoot}>
+        {/* Trump Banner - always visible */}
+        {state.trumpSuit && (
+          <TrumpBanner
+            trumpSuit={state.trumpSuit}
+            trickNumber={state.completedTricks.length + 1}
+            totalTricks={12}
+          />
+        )}
 
         {/* Winning trio indicator */}
         {state.winningTrio && (
-          <View style={styles.trioIndicator}>
-            <Text style={styles.trioIndicatorText}>
-              👑 {state.players[state.winningTrio.seat]?.name} has Trio of{" "}
-              {state.winningTrio.trio.rank}s
+          <View style={styles.trioStrip}>
+            <Text style={styles.trioStripText}>
+              {state.players[state.winningTrio.seat]?.name} has Trio of {state.winningTrio.trio.rank}s — others need 4 tricks
             </Text>
           </View>
         )}
+
+        {/* Table Area */}
+        <View style={styles.tableArea}>
+          {/* Top Player (Seat 2) */}
+          <View style={styles.topPlayer}>
+            <PlayerPanel
+              player={state.players.find((p) => p.seat === 2)}
+              isActive={state.currentPlayerSeat === 2 && state.phase === "playing"}
+              isDealer={state.dealerSeat === 2}
+              position="top"
+              mySeat={mySeat}
+              onTimerComplete={handleAutoPlay}
+              showTimer={state.phase === "playing"}
+            />
+          </View>
+
+          {/* Middle Row: Left Player, Center Trick, Right Player */}
+          <View style={styles.middleRow}>
+            {/* Left Player (Seat 1) */}
+            <View style={styles.sidePlayer}>
+              <PlayerPanel
+                player={state.players.find((p) => p.seat === 1)}
+                isActive={state.currentPlayerSeat === 1 && state.phase === "playing"}
+                isDealer={state.dealerSeat === 1}
+                position="left"
+                mySeat={mySeat}
+                onTimerComplete={handleAutoPlay}
+                showTimer={state.phase === "playing"}
+              />
+            </View>
+
+            {/* Center Trick Area */}
+            <View style={styles.centerArea}>
+              <View style={styles.trickTable}>
+                {/* Positions: top=seat2, left=seat1, right=seat3, bottom=seat0 */}
+                {([
+                  { seat: 2, style: styles.trickTop },
+                  { seat: 1, style: styles.trickLeft },
+                  { seat: 3, style: styles.trickRight },
+                  { seat: 0, style: styles.trickBottom },
+                ] as { seat: number; style: any }[]).map(({ seat, style }) => {
+                  const played = trickCards.find((c) => c.seat === seat);
+                  const isWinner = trickWinnerSeat === seat;
+                  return (
+                    <View key={seat} style={[styles.trickSlot, style]}>
+                      {played ? (
+                        <PlayingCard card={played.card} size="medium" winning={isWinner} />
+                      ) : (
+                        <View style={styles.trickPlaceholder} />
+                      )}
+                    </View>
+                  );
+                })}
+              </View>
+            </View>
+
+            {/* Right Player (Seat 3) */}
+            <View style={styles.sidePlayer}>
+              <PlayerPanel
+                player={state.players.find((p) => p.seat === 3)}
+                isActive={state.currentPlayerSeat === 3 && state.phase === "playing"}
+                isDealer={state.dealerSeat === 3}
+                position="right"
+                mySeat={mySeat}
+                onTimerComplete={handleAutoPlay}
+                showTimer={state.phase === "playing"}
+              />
+            </View>
+          </View>
+
+          {/* Sidebar overlays: scoreboard + activity log */}
+          <View style={styles.sidebarLeft}>
+            <TrickScoreboard
+              players={state.players}
+              currentPlayerSeat={state.currentPlayerSeat}
+              mySeat={mySeat}
+            />
+          </View>
+          <View style={styles.sidebarRight}>
+            <ActivityLog entries={activityLog} />
+          </View>
+        </View>
+
+        {/* My Hand Area */}
+        <View style={styles.myArea}>
+          {/* My info bar + timer */}
+          <View style={styles.myInfoBar}>
+            <View style={styles.myInfoLeft}>
+              <View style={[styles.myAvatar, isMyTurn && styles.myAvatarActive]}>
+                <Text style={styles.myAvatarText}>
+                  {myPlayer?.odInitials || "Y"}
+                </Text>
+                {state.dealerSeat === mySeat && (
+                  <View style={styles.myDealerBadge}>
+                    <Text style={styles.myDealerText}>D</Text>
+                  </View>
+                )}
+              </View>
+              <View>
+                <Text style={[styles.myName, isMyTurn && { color: "#FFD700" }]}>
+                  {isMyTurn ? "Your Turn" : "You"}
+                </Text>
+                <Text style={styles.myTricks}>Tricks: {myPlayer?.handsWon || 0}</Text>
+              </View>
+            </View>
+            {isMyTurn && (
+              <CountdownTimer
+                seconds={TURN_TIME_SECONDS}
+                size={40}
+                strokeWidth={3}
+                onComplete={handleAutoPlay}
+              />
+            )}
+          </View>
+
+          {/* Legal move hint */}
+          {state.phase === "playing" && (
+            <LegalMoveHint
+              currentTrick={state.currentTrick}
+              trumpSuit={state.trumpSuit!}
+              isFirstTrick={isFirstTrick}
+              isFirstCard={isFirstCard}
+              validCards={validCards}
+              hand={myHand}
+              isMyTurn={isMyTurn}
+            />
+          )}
+
+          {/* My Cards */}
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.myCardsScroll}
+          >
+            {myHand.map((card, i) => {
+              const isValid = validCards.some((c) => c.id === card.id);
+              const isSelected = selectedCard?.id === card.id;
+              const canTap = isMyTurn && isValid;
+
+              return (
+                <TouchableOpacity
+                  key={card.id}
+                  style={[
+                    styles.myCardSlot,
+                    { marginLeft: i > 0 ? -CARD_OVERLAP_MY : 0, zIndex: isSelected ? 100 : i },
+                    isSelected && styles.myCardLifted,
+                  ]}
+                  onPress={() => {
+                    if (!canTap) return;
+                    if (isSelected) {
+                      handlePlayCard(card);
+                    } else {
+                      setSelectedCard(card);
+                    }
+                  }}
+                  activeOpacity={canTap ? 0.85 : 1}
+                  disabled={!canTap}
+                >
+                  <PlayingCard
+                    card={card}
+                    size="large"
+                    highlighted={isSelected}
+                    dimmed={isMyTurn && !isValid}
+                  />
+                </TouchableOpacity>
+              );
+            })}
+          </ScrollView>
+
+          {/* Play button when card is selected */}
+          {isMyTurn && selectedCard && validCards.some((c) => c.id === selectedCard.id) && (
+            <TouchableOpacity
+              style={styles.playBtn}
+              onPress={() => handlePlayCard(selectedCard)}
+              activeOpacity={0.8}
+            >
+              <MaterialIcons name="send" size={18} color="#0D3B0F" />
+              <Text style={styles.playBtnText}>Play Card</Text>
+            </TouchableOpacity>
+          )}
+        </View>
       </View>
 
-      {/* Trio Declaration Modal */}
-      <Modal
-        visible={showTrioModal && state.phase === "trio_check"}
-        transparent
-        animationType="fade"
-      >
+      {/* ─── Trio Declaration Modal ──────────────────────────────────────── */}
+      <Modal visible={showTrioModal && state.phase === "trio_check"} transparent animationType="fade">
         <View style={styles.modalOverlay}>
           <View style={styles.trioModal}>
-            <Text style={styles.trioModalTitle}>You have a Trio!</Text>
+            <Text style={styles.trioModalTitle}>You Have a Trio!</Text>
             <View style={styles.trioCards}>
               {findTrios(myHand).length > 0 &&
                 findTrios(myHand)[0].cards.map((card) => (
-                  <PlayingCard key={card.id} card={card} size="large" />
+                  <PlayingCard key={card.id} card={card} size="xlarge" />
                 ))}
             </View>
             <CountdownTimer
               seconds={TRIO_TIME_SECONDS}
-              size={48}
-              onComplete={() => {
-                handleTrioDecline();
-                handleFinishTrioCheck();
-              }}
+              size={52}
+              strokeWidth={4}
+              onComplete={() => { handleTrioDecline(); handleFinishTrioCheck(); }}
             />
             <View style={styles.trioActions}>
               <TouchableOpacity
-                style={styles.trioDeclareButton}
-                onPress={() => {
-                  handleTrioDeclare();
-                  handleFinishTrioCheck();
-                }}
+                style={styles.goldButton}
+                onPress={() => { handleTrioDeclare(); handleFinishTrioCheck(); }}
                 activeOpacity={0.8}
               >
-                <Text style={styles.trioDeclareText}>Declare Trio</Text>
+                <Text style={styles.goldButtonText}>Declare Trio</Text>
               </TouchableOpacity>
               <TouchableOpacity
-                style={styles.trioDeclineButton}
-                onPress={() => {
-                  handleTrioDecline();
-                  handleFinishTrioCheck();
-                }}
+                style={styles.outlineButton}
+                onPress={() => { handleTrioDecline(); handleFinishTrioCheck(); }}
                 activeOpacity={0.8}
               >
-                <Text style={styles.trioDeclineText}>Skip</Text>
+                <Text style={styles.outlineButtonText}>Skip</Text>
               </TouchableOpacity>
             </View>
           </View>
         </View>
       </Modal>
 
-      {/* Round End Modal */}
+      {/* ─── Round End Modal ─────────────────────────────────────────────── */}
       <Modal visible={showRoundEnd} transparent animationType="fade">
         <View style={styles.modalOverlay}>
           <View style={styles.roundEndModal}>
             <Text style={styles.roundEndTitle}>Round Complete!</Text>
             <View style={styles.scoreTable}>
-              <View style={styles.scoreHeader}>
-                <Text style={[styles.scoreHeaderText, { flex: 2 }]}>
-                  Player
-                </Text>
-                <Text style={styles.scoreHeaderText}>Hands</Text>
-                <Text style={styles.scoreHeaderText}>Points</Text>
+              <View style={styles.scoreHeaderRow}>
+                <Text style={[styles.scoreHeaderCell, { flex: 2 }]}>Player</Text>
+                <Text style={styles.scoreHeaderCell}>Tricks</Text>
+                <Text style={styles.scoreHeaderCell}>Points</Text>
               </View>
-              {calculateRoundScores(state.players, state.winningTrio).map(
-                (score) => {
-                  const player = state.players[score.seat];
-                  return (
-                    <View key={score.seat} style={styles.scoreRow}>
-                      <Text
-                        style={[styles.scorePlayerName, { flex: 2 }]}
-                        numberOfLines={1}
-                      >
-                        {score.seat === mySeat ? "You" : player?.name}
-                        {state.winningTrio?.seat === score.seat ? " 👑" : ""}
-                      </Text>
-                      <Text style={styles.scoreValue}>{score.handsWon}</Text>
-                      <Text
-                        style={[
-                          styles.scorePoints,
-                          {
-                            color:
-                              score.points > 0
-                                ? "#4CAF50"
-                                : score.points < 0
-                                ? "#F44336"
-                                : "#A5D6A7",
-                          },
-                        ]}
-                      >
-                        {score.points > 0 ? "+" : ""}
-                        {score.points}
-                      </Text>
-                    </View>
-                  );
-                }
-              )}
+              {calculateRoundScores(state.players, state.winningTrio).map((score) => {
+                const player = state.players[score.seat];
+                const seatColor = ["#4ADE80", "#60A5FA", "#FB923C", "#F472B6"][score.seat];
+                return (
+                  <View key={score.seat} style={styles.scoreRow}>
+                    <View style={[styles.scoreRowDot, { backgroundColor: seatColor }]} />
+                    <Text style={[styles.scorePlayerName, { flex: 2 }]} numberOfLines={1}>
+                      {score.seat === mySeat ? "You" : player?.name}
+                      {state.winningTrio?.seat === score.seat ? " (Trio)" : ""}
+                    </Text>
+                    <Text style={styles.scoreValue}>{score.handsWon}</Text>
+                    <Text
+                      style={[
+                        styles.scorePoints,
+                        { color: score.points > 0 ? "#4ADE80" : score.points < 0 ? "#EF4444" : "#A5D6A7" },
+                      ]}
+                    >
+                      {score.points > 0 ? "+" : ""}{score.points}
+                    </Text>
+                  </View>
+                );
+              })}
             </View>
-            <TouchableOpacity
-              style={styles.nextRoundButton}
-              onPress={handleNextRound}
-              activeOpacity={0.8}
-            >
-              <Text style={styles.nextRoundText}>Next Round</Text>
+            <TouchableOpacity style={styles.goldButton} onPress={handleNextRound} activeOpacity={0.8}>
+              <Text style={styles.goldButtonText}>Next Round</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -676,15 +578,17 @@ export default function GameScreen() {
   );
 }
 
+// ─── Styles ──────────────────────────────────────────────────────────────────
+
 const styles = StyleSheet.create({
-  overlayContainer: {
+  overlayCenter: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
   },
-  dealingOverlay: {
+  shuffleContainer: {
     alignItems: "center",
-    gap: 20,
+    gap: 24,
   },
   shuffleCards: {
     flexDirection: "row",
@@ -692,235 +596,214 @@ const styles = StyleSheet.create({
     height: 120,
   },
   shuffleCard: {
-    marginHorizontal: -10,
+    marginHorizontal: -12,
   },
-  dealingText: {
-    fontSize: 24,
-    fontWeight: "700",
+  overlayTitle: {
+    fontSize: 22,
+    fontWeight: "800",
     color: "#FFD700",
   },
-  dealingCount: {
-    fontSize: 18,
-    color: "#A5D6A7",
-    fontWeight: "600",
+  dealingContainer: {
+    alignItems: "center",
+    gap: 16,
   },
-  dealingProgress: {
-    width: 200,
-    height: 6,
+  dealingCount: {
+    fontSize: 16,
+    color: "#A5D6A7",
+    fontWeight: "700",
+    fontVariant: ["tabular-nums"],
+  },
+  progressTrack: {
+    width: 220,
+    height: 5,
     backgroundColor: "#1A4D1E",
     borderRadius: 3,
     overflow: "hidden",
   },
-  dealingProgressBar: {
+  progressBar: {
     height: "100%",
     backgroundColor: "#FFD700",
     borderRadius: 3,
   },
-  trumpReveal: {
+  dealingTargets: {
+    flexDirection: "row",
+    gap: 16,
+    marginTop: 8,
+  },
+  dealTarget: {
+    flexDirection: "row",
     alignItems: "center",
-    gap: 20,
-    padding: 32,
+    gap: 4,
+  },
+  dealTargetDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+  },
+  dealTargetName: {
+    color: "#C8E6C9",
+    fontSize: 12,
+    fontWeight: "600",
+  },
+  trumpRevealBox: {
+    alignItems: "center",
+    gap: 18,
+    padding: 28,
+    backgroundColor: "#0D3B0FEE",
+    borderRadius: 20,
+    borderWidth: 2,
+    borderColor: "#FFD700",
+    marginHorizontal: 24,
   },
   trumpRevealTitle: {
-    fontSize: 28,
+    fontSize: 24,
     fontWeight: "800",
     color: "#FFD700",
   },
-  trumpRevealCard: {
-    padding: 8,
+  trumpRevealCardWrap: {
+    padding: 6,
     borderRadius: 12,
-    borderWidth: 3,
-    borderColor: "#FFD700",
-    backgroundColor: "#163318",
+    borderWidth: 2,
+    borderColor: "#FFD70060",
+  },
+  trumpRevealInfo: {
+    alignItems: "center",
+    gap: 4,
   },
   trumpRevealSuit: {
-    fontSize: 32,
-    fontWeight: "700",
+    fontSize: 28,
+    fontWeight: "800",
   },
   trumpRevealHint: {
-    fontSize: 14,
+    fontSize: 13,
     color: "#A5D6A7",
-    textAlign: "center",
   },
-  gotItButton: {
+  goldButton: {
     backgroundColor: "#FFD700",
-    paddingVertical: 14,
-    paddingHorizontal: 48,
+    paddingVertical: 13,
+    paddingHorizontal: 40,
     borderRadius: 12,
-    marginTop: 8,
+    alignItems: "center",
+    minWidth: 140,
   },
-  gotItText: {
-    fontSize: 16,
-    fontWeight: "700",
+  goldButtonText: {
+    fontSize: 15,
+    fontWeight: "800",
     color: "#0D3B0F",
   },
-  gameContainer: {
+  outlineButton: {
+    backgroundColor: "transparent",
+    paddingVertical: 13,
+    paddingHorizontal: 40,
+    borderRadius: 12,
+    alignItems: "center",
+    borderWidth: 1.5,
+    borderColor: "#2E7D32",
+    minWidth: 140,
+  },
+  outlineButtonText: {
+    fontSize: 15,
+    fontWeight: "700",
+    color: "#A5D6A7",
+  },
+  // ─── Main Game ──────────────────────────────────────────────────────────
+  gameRoot: {
     flex: 1,
+  },
+  trioStrip: {
+    backgroundColor: "#FFD70018",
+    paddingVertical: 4,
+    paddingHorizontal: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: "#FFD70030",
+  },
+  trioStripText: {
+    color: "#FFD700",
+    fontSize: 11,
+    fontWeight: "700",
+    textAlign: "center",
+  },
+  tableArea: {
+    flex: 1,
+    position: "relative",
+  },
+  topPlayer: {
+    alignItems: "center",
+    paddingTop: 6,
   },
   middleRow: {
     flex: 1,
     flexDirection: "row",
     alignItems: "center",
   },
-  opponentArea: {
+  sidePlayer: {
+    width: 80,
     alignItems: "center",
-    gap: 4,
-  },
-  opponentTop: {
-    paddingTop: 4,
-    paddingBottom: 4,
-  },
-  opponentLeft: {
-    width: 60,
-    paddingLeft: 4,
-  },
-  opponentRight: {
-    width: 60,
-    paddingRight: 4,
-  },
-  opponentInfo: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-  },
-  opponentAvatar: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
     justifyContent: "center",
-    alignItems: "center",
   },
-  activePlayerBorder: {
-    borderWidth: 2,
-    borderColor: "#FFD700",
-  },
-  opponentAvatarText: {
-    color: "#FFFFFF",
-    fontSize: 11,
-    fontWeight: "bold",
-  },
-  opponentName: {
-    color: "#A5D6A7",
-    fontSize: 11,
-    fontWeight: "600",
-    maxWidth: 60,
-  },
-  handsBadge: {
-    backgroundColor: "#1A4D1E",
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: "#2E7D32",
-  },
-  handsBadgeText: {
-    color: "#FFD700",
-    fontSize: 11,
-    fontWeight: "700",
-  },
-  opponentCards: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  opponentCardsVertical: {
-    flexDirection: "column",
-  },
-  moreCards: {
-    color: "#A5D6A7",
-    fontSize: 10,
-    marginLeft: 4,
-  },
-  playArea: {
+  centerArea: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    position: "relative",
   },
-  trickCards: {
+  trickTable: {
     width: 180,
-    height: 180,
+    height: 200,
     position: "relative",
   },
-  trickCardPosition: {
+  trickSlot: {
     position: "absolute",
   },
-  trickNorth: {
+  trickTop: {
     top: 0,
     left: "50%",
-    marginLeft: -28,
+    marginLeft: -26,
   },
-  trickSouth: {
+  trickBottom: {
     bottom: 0,
     left: "50%",
-    marginLeft: -28,
+    marginLeft: -26,
   },
-  trickWest: {
+  trickLeft: {
     top: "50%",
     left: 0,
-    marginTop: -39,
+    marginTop: -37,
   },
-  trickEast: {
+  trickRight: {
     top: "50%",
     right: 0,
-    marginTop: -39,
+    marginTop: -37,
   },
-  trickCardPlaceholder: {
-    width: 56,
-    height: 78,
+  trickPlaceholder: {
+    width: 52,
+    height: 74,
     borderRadius: 6,
     borderWidth: 1,
-    borderColor: "#2E7D3240",
+    borderColor: "#2E7D3230",
     borderStyle: "dashed",
   },
-  trumpIndicator: {
+  sidebarLeft: {
     position: "absolute",
-    top: 4,
-    right: 8,
-    backgroundColor: "#1A4D1E",
-    borderRadius: 8,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderWidth: 1,
-    borderColor: "#FFD700",
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
+    bottom: 8,
+    left: 4,
   },
-  trumpLabel: {
-    color: "#FFD700",
-    fontSize: 10,
-    fontWeight: "700",
-  },
-  trumpSuit: {
-    fontSize: 16,
-    fontWeight: "bold",
-  },
-  trickCount: {
+  sidebarRight: {
     position: "absolute",
-    bottom: 4,
-    backgroundColor: "#1A4D1E",
-    borderRadius: 6,
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderWidth: 1,
-    borderColor: "#2E7D32",
+    bottom: 8,
+    right: 4,
   },
-  trickCountText: {
-    color: "#A5D6A7",
-    fontSize: 11,
-    fontWeight: "600",
-  },
-  myHandArea: {
-    paddingBottom: 8,
+  // ─── My Hand Area ─────────────────────────────────────────────────────
+  myArea: {
     borderTopWidth: 1,
-    borderTopColor: "#2E7D32",
-    backgroundColor: "#0D3B0F",
+    borderTopColor: "#2E7D3240",
+    backgroundColor: "#0A2E0C",
+    paddingBottom: Platform.OS === "web" ? 8 : 4,
   },
-  myInfo: {
+  myInfoBar: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingHorizontal: 12,
+    paddingHorizontal: 14,
     paddingVertical: 8,
   },
   myInfoLeft: {
@@ -932,91 +815,99 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 18,
-    backgroundColor: "#4CAF50",
+    backgroundColor: "#4ADE80",
     justifyContent: "center",
     alignItems: "center",
+  },
+  myAvatarActive: {
+    borderWidth: 2,
+    borderColor: "#FFD700",
+    shadowColor: "#FFD700",
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.5,
+    shadowRadius: 6,
+    elevation: 6,
   },
   myAvatarText: {
     color: "#FFFFFF",
     fontSize: 14,
-    fontWeight: "bold",
+    fontWeight: "800",
+  },
+  myDealerBadge: {
+    position: "absolute",
+    bottom: -2,
+    right: -2,
+    width: 14,
+    height: 14,
+    borderRadius: 7,
+    backgroundColor: "#FFD700",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  myDealerText: {
+    color: "#0D3B0F",
+    fontSize: 8,
+    fontWeight: "900",
   },
   myName: {
     color: "#E8F5E9",
     fontSize: 14,
     fontWeight: "700",
   },
-  myHands: {
-    color: "#A5D6A7",
-    fontSize: 12,
+  myTricks: {
+    color: "#81C784",
+    fontSize: 11,
+    fontWeight: "500",
   },
-  myCards: {
-    flexDirection: "row",
-    paddingHorizontal: 12,
-    paddingVertical: 8,
+  myCardsScroll: {
+    paddingHorizontal: 14,
+    paddingVertical: 6,
     alignItems: "flex-end",
   },
-  myCardWrapper: {
-    zIndex: 1,
+  myCardSlot: {
+    // zIndex set inline
   },
-  myCardSelected: {
-    transform: [{ translateY: -12 }],
-    zIndex: 10,
+  myCardLifted: {
+    transform: [{ translateY: -14 }],
   },
-  myCardDimmed: {
-    opacity: 0.4,
-  },
-  playButton: {
+  playBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
     backgroundColor: "#FFD700",
     marginHorizontal: 16,
-    paddingVertical: 12,
+    paddingVertical: 11,
     borderRadius: 10,
-    alignItems: "center",
     marginTop: 4,
+    marginBottom: 4,
   },
-  playButtonText: {
-    fontSize: 16,
-    fontWeight: "700",
+  playBtnText: {
+    fontSize: 15,
+    fontWeight: "800",
     color: "#0D3B0F",
   },
-  trioIndicator: {
-    position: "absolute",
-    top: 4,
-    left: 12,
-    right: 12,
-    backgroundColor: "#FFD70030",
-    borderRadius: 8,
-    paddingVertical: 6,
-    paddingHorizontal: 12,
-    borderWidth: 1,
-    borderColor: "#FFD700",
-  },
-  trioIndicatorText: {
-    color: "#FFD700",
-    fontSize: 13,
-    fontWeight: "700",
-    textAlign: "center",
-  },
+  // ─── Modals ───────────────────────────────────────────────────────────
   modalOverlay: {
     flex: 1,
-    backgroundColor: "rgba(0,0,0,0.8)",
+    backgroundColor: "rgba(0,0,0,0.82)",
     justifyContent: "center",
     alignItems: "center",
     padding: 20,
   },
   trioModal: {
-    backgroundColor: "#1A4D1E",
+    backgroundColor: "#0D3B0F",
     borderRadius: 20,
     padding: 24,
     alignItems: "center",
-    gap: 20,
+    gap: 18,
     width: "100%",
     maxWidth: 340,
     borderWidth: 2,
     borderColor: "#FFD700",
   },
   trioModalTitle: {
-    fontSize: 22,
+    fontSize: 20,
     fontWeight: "800",
     color: "#FFD700",
   },
@@ -1029,34 +920,8 @@ const styles = StyleSheet.create({
     gap: 12,
     width: "100%",
   },
-  trioDeclareButton: {
-    flex: 1,
-    backgroundColor: "#FFD700",
-    paddingVertical: 14,
-    borderRadius: 12,
-    alignItems: "center",
-  },
-  trioDeclareText: {
-    fontSize: 16,
-    fontWeight: "700",
-    color: "#0D3B0F",
-  },
-  trioDeclineButton: {
-    flex: 1,
-    backgroundColor: "#163318",
-    paddingVertical: 14,
-    borderRadius: 12,
-    alignItems: "center",
-    borderWidth: 1,
-    borderColor: "#2E7D32",
-  },
-  trioDeclineText: {
-    fontSize: 16,
-    fontWeight: "700",
-    color: "#A5D6A7",
-  },
   roundEndModal: {
-    backgroundColor: "#1A4D1E",
+    backgroundColor: "#0D3B0F",
     borderRadius: 20,
     padding: 24,
     width: "100%",
@@ -1066,59 +931,54 @@ const styles = StyleSheet.create({
     gap: 16,
   },
   roundEndTitle: {
-    fontSize: 22,
+    fontSize: 20,
     fontWeight: "800",
     color: "#FFD700",
     textAlign: "center",
   },
   scoreTable: {
-    gap: 8,
+    gap: 6,
   },
-  scoreHeader: {
+  scoreHeaderRow: {
     flexDirection: "row",
-    paddingBottom: 8,
+    paddingBottom: 6,
     borderBottomWidth: 1,
-    borderBottomColor: "#2E7D32",
+    borderBottomColor: "#2E7D3240",
   },
-  scoreHeaderText: {
+  scoreHeaderCell: {
     flex: 1,
-    color: "#A5D6A7",
-    fontSize: 12,
+    color: "#81C784",
+    fontSize: 11,
     fontWeight: "700",
     textAlign: "center",
   },
   scoreRow: {
     flexDirection: "row",
     alignItems: "center",
-    paddingVertical: 6,
+    paddingVertical: 5,
+    gap: 6,
+  },
+  scoreRowDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
   },
   scorePlayerName: {
     color: "#E8F5E9",
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: "600",
   },
   scoreValue: {
     flex: 1,
     color: "#E8F5E9",
-    fontSize: 16,
-    fontWeight: "700",
+    fontSize: 15,
+    fontWeight: "800",
     textAlign: "center",
   },
   scorePoints: {
     flex: 1,
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: "800",
     textAlign: "center",
-  },
-  nextRoundButton: {
-    backgroundColor: "#FFD700",
-    paddingVertical: 14,
-    borderRadius: 12,
-    alignItems: "center",
-  },
-  nextRoundText: {
-    fontSize: 16,
-    fontWeight: "700",
-    color: "#0D3B0F",
   },
 });

@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useRef } from "react";
-import { View, Text, StyleSheet } from "react-native";
+import { View, Text, StyleSheet, Platform } from "react-native";
+import Svg, { Circle } from "react-native-svg";
 
 interface CountdownTimerProps {
   seconds: number;
@@ -7,6 +8,7 @@ interface CountdownTimerProps {
   size?: number;
   showLabel?: boolean;
   label?: string;
+  strokeWidth?: number;
 }
 
 export function CountdownTimer({
@@ -15,9 +17,12 @@ export function CountdownTimer({
   size = 48,
   showLabel = false,
   label = "",
+  strokeWidth = 3,
 }: CountdownTimerProps) {
   const [remaining, setRemaining] = useState(seconds);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const onCompleteRef = useRef(onComplete);
+  onCompleteRef.current = onComplete;
 
   useEffect(() => {
     setRemaining(seconds);
@@ -27,7 +32,7 @@ export function CountdownTimer({
       setRemaining((prev) => {
         if (prev <= 1) {
           if (intervalRef.current) clearInterval(intervalRef.current);
-          onComplete?.();
+          onCompleteRef.current?.();
           return 0;
         }
         return prev - 1;
@@ -43,40 +48,56 @@ export function CountdownTimer({
   const isWarning = remaining <= 5;
   const isCritical = remaining <= 3;
 
-  const bgColor = isCritical
-    ? "#F44336"
-    : isWarning
-    ? "#FF9800"
-    : "#4CAF50";
+  const activeColor = isCritical ? "#EF4444" : isWarning ? "#F59E0B" : "#4ADE80";
+  const trackColor = `${activeColor}20`;
+
+  const radius = (size - strokeWidth) / 2;
+  const circumference = 2 * Math.PI * radius;
+  const strokeDashoffset = circumference * (1 - progress);
 
   return (
-    <View style={styles.container}>
-      <View
-        style={[
-          styles.circle,
-          {
-            width: size,
-            height: size,
-            borderRadius: size / 2,
-            borderColor: bgColor,
-            backgroundColor: `${bgColor}20`,
-          },
-        ]}
-      >
+    <View style={[styles.container, { width: size, height: size }]}>
+      <Svg width={size} height={size} style={styles.svg}>
+        {/* Track */}
+        <Circle
+          cx={size / 2}
+          cy={size / 2}
+          r={radius}
+          stroke={trackColor}
+          strokeWidth={strokeWidth}
+          fill="transparent"
+        />
+        {/* Progress */}
+        <Circle
+          cx={size / 2}
+          cy={size / 2}
+          r={radius}
+          stroke={activeColor}
+          strokeWidth={strokeWidth}
+          fill="transparent"
+          strokeDasharray={`${circumference}`}
+          strokeDashoffset={strokeDashoffset}
+          strokeLinecap="round"
+          rotation="-90"
+          origin={`${size / 2}, ${size / 2}`}
+        />
+      </Svg>
+      <View style={styles.textContainer}>
         <Text
           style={[
             styles.timeText,
             {
-              fontSize: size * 0.4,
-              color: bgColor,
+              fontSize: size * 0.35,
+              color: activeColor,
             },
+            isWarning && styles.warningPulse,
           ]}
         >
           {remaining}
         </Text>
       </View>
       {showLabel && label ? (
-        <Text style={styles.label}>{label}</Text>
+        <Text style={[styles.label, { color: activeColor }]}>{label}</Text>
       ) : null}
     </View>
   );
@@ -85,20 +106,27 @@ export function CountdownTimer({
 const styles = StyleSheet.create({
   container: {
     alignItems: "center",
-    gap: 4,
+    justifyContent: "center",
   },
-  circle: {
-    borderWidth: 3,
+  svg: {
+    position: "absolute",
+  },
+  textContainer: {
     justifyContent: "center",
     alignItems: "center",
   },
   timeText: {
-    fontWeight: "bold",
+    fontWeight: "800",
     fontVariant: ["tabular-nums"],
   },
+  warningPulse: {
+    // Visual emphasis handled by color change
+  },
   label: {
-    color: "#A5D6A7",
-    fontSize: 11,
-    fontWeight: "500",
+    position: "absolute",
+    bottom: -16,
+    fontSize: 10,
+    fontWeight: "600",
+    textAlign: "center",
   },
 });

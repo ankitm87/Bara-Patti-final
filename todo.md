@@ -33,3 +33,32 @@
 - [x] Keep screen awake during gameplay
 - [x] Game engine unit tests (47 tests passing)
 - [x] Bot players for single-player testing
+
+## V2 Upgrades
+
+- [x] Poker-style circular table layout redesign
+- [x] Player panels with avatar, name, tricks won, active turn indicator
+- [x] Glowing border for active player
+- [x] Large tappable cards for current player
+- [x] Smaller face-down cards for opponents
+- [x] Smooth card play animations (300-500ms)
+- [x] Dealing cards one-by-one animation
+- [x] Winning trick animation (cards move to winner)
+- [x] Center trick area - show cards in order played
+- [x] Highlight winning card in trick
+- [x] Permanent trump display at top (TRUMP suit symbol)
+- [x] Trump reveal animation when dealer's last card flipped
+- [x] Circular countdown timer with warning at 5 seconds
+- [x] Auto-play lowest legal card on timer expiry
+- [x] Grey out and disable illegal cards
+- [x] Contextual hints above cards (follow suit, higher trump)
+- [x] Live trick counter scoreboard during game
+- [x] Collapsible activity log showing recent actions
+- [x] Improved invite system with Copy Invite Link button
+- [x] Improved WhatsApp share message format
+- [ ] Reconnect support (60-second window)
+- [x] Mobile UX - prevent accidental card plays (tap-then-confirm)
+- [ ] Sound effects - shuffle, card play, trick win, timer warning
+- [ ] Mute toggle for sound effects
+- [x] Future-ready architecture for AI players, async, leaderboard
+- [x] V2 game engine tests (14 additional tests passing)
