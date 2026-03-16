@@ -51,13 +51,14 @@ export interface Trio {
 }
 
 export type GamePhase =
-  | "waiting"       // Waiting for players
-  | "dealing"       // Cards being dealt
-  | "trump_reveal"  // Trump card revealed, 20s countdown
-  | "trio_check"    // Players can declare trio, 20s countdown
-  | "playing"       // Active gameplay
-  | "round_end"     // Round finished, showing scores
-  | "game_end";     // Game over
+  | "waiting"          // Waiting for players
+  | "dealing"          // Cards being dealt
+  | "trump_reveal"     // Trump card revealed, 20s countdown
+  | "trio_check"       // Players can declare trio, 20s countdown
+  | "playing"          // Active gameplay
+  | "trick_complete"   // Trick just completed, showing all 4 cards briefly
+  | "round_end"        // Round finished, showing scores
+  | "game_end";        // Game over
 
 export interface GameState {
   roomId: string;

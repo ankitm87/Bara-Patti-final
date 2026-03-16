@@ -153,32 +153,15 @@ function gameReducer(state: GameState, action: GameAction): GameState {
           p.seat === winnerSeat ? { ...p, handsWon: p.handsWon + 1 } : p
         );
 
-        const isLastTrick = state.completedTricks.length + 1 === 12;
-
-        if (isLastTrick) {
-          return {
-            ...state,
-            players: playersWithScore,
-            currentTrick: completedTrick,
-            completedTricks: [...state.completedTricks, completedTrick],
-            phase: "round_end",
-            turnStartTime: null,
-          };
-        }
-
-        // Start next trick
+        // Pause at trick_complete so all 4 cards are visible for 1.5s
+        // The game screen will dispatch COMPLETE_TRICK after the delay
         return {
           ...state,
           players: playersWithScore,
-          currentTrick: {
-            trickNumber: state.completedTricks.length + 2,
-            leadSeat: winnerSeat,
-            cards: [],
-            winnerSeat: null,
-          },
+          currentTrick: completedTrick,
           completedTricks: [...state.completedTricks, completedTrick],
-          currentPlayerSeat: winnerSeat,
-          turnStartTime: Date.now(),
+          phase: "trick_complete",
+          turnStartTime: null,
         };
       }
 
@@ -189,6 +172,49 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         players: updatedPlayers,
         currentTrick: updatedTrick,
         currentPlayerSeat: nextSeat,
+        turnStartTime: Date.now(),
+      };
+    }
+
+    case "COMPLETE_TRICK": {
+      // Called after the 1.5s delay showing all 4 cards
+      if (state.phase !== "trick_complete") return state;
+
+      const lastTrick = state.completedTricks[state.completedTricks.length - 1];
+      if (!lastTrick || !lastTrick.winnerSeat) return state;
+
+      const isLastTrick = state.completedTricks.length === 12;
+
+      if (isLastTrick) {
+        // End the round
+        const roundScores = calculateRoundScores(state.players, state.winningTrio);
+        const updatedScores = { ...state.scores };
+        for (const score of roundScores) {
+          const player = state.players[score.seat];
+          if (player) {
+            updatedScores[player.userId] =
+              (updatedScores[player.userId] || 0) + score.points;
+          }
+        }
+        return {
+          ...state,
+          phase: "round_end",
+          scores: updatedScores,
+          turnStartTime: null,
+        };
+      }
+
+      // Start next trick - winner leads
+      return {
+        ...state,
+        phase: "playing",
+        currentTrick: {
+          trickNumber: state.completedTricks.length + 1,
+          leadSeat: lastTrick.winnerSeat,
+          cards: [],
+          winnerSeat: null,
+        },
+        currentPlayerSeat: lastTrick.winnerSeat,
         turnStartTime: Date.now(),
       };
     }

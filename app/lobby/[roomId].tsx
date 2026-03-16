@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   View,
   Text,
@@ -14,7 +14,6 @@ import { Seat, PlayerState } from "@/lib/game-engine";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import * as Linking from "expo-linking";
 
-const SEAT_LABELS = ["South", "West", "North", "East"];
 const SEAT_COLORS = ["#4CAF50", "#2196F3", "#FF9800", "#E91E63"];
 
 export default function LobbyScreen() {
@@ -23,7 +22,7 @@ export default function LobbyScreen() {
   const { user } = useAuth();
   const { state, dispatch } = useGame();
   const [isReady, setIsReady] = useState(false);
-  const [hasStarted, setHasStarted] = useState(false);
+  const hasNavigated = useRef(false);
 
   // Initialize room with current player
   useEffect(() => {
@@ -99,18 +98,33 @@ export default function LobbyScreen() {
     }
   };
 
+  // Compute ready state
+  const playerCount = state.players.length;
+  const readyCount = state.players.filter((p) => p.isReady).length;
+  const allReady = playerCount === 4 && readyCount === 4;
+
+  // Navigate to game when all ready
+  const startGame = () => {
+    if (hasNavigated.current) return;
+    hasNavigated.current = true;
+    dispatch({ type: "START_DEALING" });
+    setTimeout(() => {
+      router.replace(`/game/${roomId}` as any);
+    }, 150);
+  };
+
   // Auto-start when all 4 players are ready
   useEffect(() => {
-    if (hasStarted) return;
-    const allReady = state.players.length === 4 && state.players.every((p) => p.isReady);
-    if (allReady) {
-      setHasStarted(true);
-      dispatch({ type: "START_DEALING" });
-      setTimeout(() => {
-        router.replace(`/game/${roomId}` as any);
-      }, 200);
+    if (allReady && !hasNavigated.current) {
+      startGame();
     }
-  }, [state.players, hasStarted]);
+  }, [allReady]);
+
+  // Also check after every render in case useEffect missed it
+  if (allReady && !hasNavigated.current) {
+    // Schedule for next tick to avoid dispatch during render
+    setTimeout(() => startGame(), 0);
+  }
 
   const handleShareWhatsApp = () => {
     const message = `Join my Bara Patti game! \u{1F0CF}\n\nRoom Code: ${roomId}\n\nOpen the Bara Patti app and enter this code to join.`;
@@ -118,7 +132,20 @@ export default function LobbyScreen() {
     Linking.openURL(whatsappUrl);
   };
 
-  const allReady = state.players.length === 4 && state.players.every((p) => p.isReady);
+  // Manual start button as fallback — marks all as ready and starts
+  const handleStartGame = () => {
+    if (hasNavigated.current) return;
+    if (playerCount < 4) return;
+
+    // Mark all players as ready
+    state.players.forEach((p) => {
+      if (!p.isReady) {
+        dispatch({ type: "SET_PLAYER_READY", seat: p.seat, isReady: true });
+      }
+    });
+
+    startGame();
+  };
 
   return (
     <ScreenContainer edges={["top", "bottom", "left", "right"]}>
@@ -170,7 +197,10 @@ export default function LobbyScreen() {
             <View style={styles.tableCenter}>
               <Text style={styles.tableCenterText}>{"\u{1F0CF}"}</Text>
               <Text style={styles.tableCenterLabel}>
-                {state.players.length}/4 Players
+                {playerCount}/4 Players
+              </Text>
+              <Text style={styles.tableCenterReady}>
+                {readyCount} Ready
               </Text>
             </View>
 
@@ -197,7 +227,7 @@ export default function LobbyScreen() {
 
         {/* Actions */}
         <View style={styles.actions}>
-          {state.players.length < 4 && (
+          {playerCount < 4 && (
             <TouchableOpacity
               style={styles.fillButton}
               onPress={handleFillAI}
@@ -208,26 +238,43 @@ export default function LobbyScreen() {
             </TouchableOpacity>
           )}
 
-          <TouchableOpacity
-            style={[styles.readyButton, isReady && styles.readyButtonActive]}
-            onPress={handleReady}
-            activeOpacity={0.8}
-          >
-            <MaterialIcons
-              name={isReady ? "check-circle" : "radio-button-unchecked"}
-              size={22}
-              color={isReady ? "#0D3B0F" : "#FFD700"}
-            />
-            <Text
-              style={[
-                styles.readyButtonText,
-                isReady && styles.readyButtonTextActive,
-              ]}
+          {/* Ready button */}
+          {playerCount === 4 && !isReady && (
+            <TouchableOpacity
+              style={styles.readyButton}
+              onPress={handleReady}
+              activeOpacity={0.8}
             >
-              {isReady ? "Ready!" : "Tap when Ready"}
-            </Text>
-          </TouchableOpacity>
+              <MaterialIcons
+                name="radio-button-unchecked"
+                size={22}
+                color="#FFD700"
+              />
+              <Text style={styles.readyButtonText}>Tap when Ready</Text>
+            </TouchableOpacity>
+          )}
 
+          {/* Already ready, waiting for others */}
+          {isReady && !allReady && (
+            <View style={styles.waitingRow}>
+              <MaterialIcons name="check-circle" size={20} color="#4ADE80" />
+              <Text style={styles.waitingText}>You are ready. Waiting for others...</Text>
+            </View>
+          )}
+
+          {/* Start Game button — visible when 4 players, user is ready, but not all ready yet */}
+          {playerCount === 4 && isReady && !allReady && (
+            <TouchableOpacity
+              style={styles.startButton}
+              onPress={handleStartGame}
+              activeOpacity={0.8}
+            >
+              <MaterialIcons name="play-arrow" size={22} color="#0D3B0F" />
+              <Text style={styles.startButtonText}>Start Game</Text>
+            </TouchableOpacity>
+          )}
+
+          {/* When all are ready and navigating */}
           {allReady && (
             <View style={styles.startingRow}>
               <MaterialIcons name="hourglass-top" size={18} color="#FFD700" />
@@ -359,10 +406,10 @@ const styles = StyleSheet.create({
     position: "absolute",
     top: "50%",
     left: "50%",
-    marginTop: -30,
-    marginLeft: -40,
-    width: 80,
-    height: 60,
+    marginTop: -36,
+    marginLeft: -44,
+    width: 88,
+    height: 72,
     justifyContent: "center",
     alignItems: "center",
     backgroundColor: "#163318",
@@ -371,11 +418,16 @@ const styles = StyleSheet.create({
     borderColor: "#2E7D32",
   },
   tableCenterText: {
-    fontSize: 24,
+    fontSize: 22,
   },
   tableCenterLabel: {
     fontSize: 11,
     color: "#A5D6A7",
+    fontWeight: "600",
+  },
+  tableCenterReady: {
+    fontSize: 10,
+    color: "#FFD700",
     fontWeight: "600",
   },
   slot: {
@@ -429,17 +481,26 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: "#FFD700",
   },
-  readyButtonActive: {
-    backgroundColor: "#FFD700",
-    borderColor: "#FFD700",
-  },
   readyButtonText: {
     fontSize: 17,
     fontWeight: "700",
     color: "#FFD700",
   },
-  readyButtonTextActive: {
-    color: "#0D3B0F",
+  waitingRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    paddingVertical: 12,
+    backgroundColor: "#1A4D1E",
+    borderRadius: 14,
+    borderWidth: 2,
+    borderColor: "#4ADE80",
+  },
+  waitingText: {
+    color: "#4ADE80",
+    fontSize: 14,
+    fontWeight: "600",
   },
   fillButton: {
     flexDirection: "row",
@@ -456,6 +517,20 @@ const styles = StyleSheet.create({
     color: "#A5D6A7",
     fontSize: 14,
     fontWeight: "600",
+  },
+  startButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    backgroundColor: "#4ADE80",
+    paddingVertical: 16,
+    borderRadius: 14,
+  },
+  startButtonText: {
+    fontSize: 17,
+    fontWeight: "800",
+    color: "#0D3B0F",
   },
   startingRow: {
     flexDirection: "row",

@@ -93,3 +93,13 @@
 - [x] Rename: "Tricks" → "Hands" throughout the UI
 - [x] Fix: Center my cards horizontally (currently left-aligned)
 - [x] Fix: Remove "Play Card" prompt button - just tap card to play it directly
+
+## V5 Fixes & Leaderboard
+
+- [x] Fix: Lobby "Tap when ready" still doesn't start game when room has invited friend + bots
+- [x] Fix: 4th card in trick not visible - add 1-2s delay before clearing trick
+- [x] Build persistent grouped leaderboard with database storage
+- [x] Database schema for leaderboard (players, groups, scores)
+- [x] Server API endpoints for leaderboard CRUD
+- [x] Leaderboard UI screen with group filtering
+- [x] Store game results after each round/session

@@ -41,6 +41,8 @@ import {
 } from "@/lib/game-engine";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { useSound } from "@/hooks/use-sound";
+import { trpc } from "@/lib/trpc";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("window");
 const CARD_WIDTH_MY = 58;
@@ -60,12 +62,22 @@ export default function GameScreen() {
   const [trickWinnerSeat, setTrickWinnerSeat] = useState<Seat | null>(null);
   const logIdRef = useRef(0);
   const { muted, toggleMute, playShuffle, playCardPlay, playTrickWin } = useSound();
+  const saveRoundMutation = trpc.leaderboard.saveRound.useMutation();
+  const [groupName, setGroupName] = useState("Family");
+
+  // Load group name from storage
+  useEffect(() => {
+    AsyncStorage.getItem("bara-patti-group-name").then((name) => {
+      if (name) setGroupName(name);
+    });
+  }, []);
 
   const mySeat: Seat = 0;
   const myPlayer = state.players.find((p) => p.seat === mySeat);
   const myHand = myPlayer?.hand || [];
 
   const isMyTurn = state.phase === "playing" && state.currentPlayerSeat === mySeat;
+  const isGameActive = state.phase === "playing" || state.phase === "trick_complete";
   const isFirstTrick = state.completedTricks.length === 0;
   const isFirstCard = !state.currentTrick || state.currentTrick.cards.length === 0;
 
@@ -168,18 +180,26 @@ export default function GameScreen() {
     }
   }, [state.phase]);
 
-  // ─── Detect trick completion ──────────────────────────────────────────────
+  // ─── Detect trick completion (show all 4 cards for 1.5s) ─────────────────
   useEffect(() => {
-    if (state.currentTrick?.winnerSeat != null) {
-      const winner = state.players.find((p) => p.seat === state.currentTrick!.winnerSeat);
-      if (winner) {
-        setTrickWinnerSeat(state.currentTrick.winnerSeat);
-        playTrickWin();
-        addLog(`${winner.seat === mySeat ? "You" : winner.name} won the trick!`, "trick_win");
-        setTimeout(() => setTrickWinnerSeat(null), 1200);
-      }
+    if (state.phase !== "trick_complete") return;
+    if (!state.currentTrick || state.currentTrick.winnerSeat == null) return;
+
+    const winner = state.players.find((p) => p.seat === state.currentTrick!.winnerSeat);
+    if (winner) {
+      setTrickWinnerSeat(state.currentTrick.winnerSeat);
+      playTrickWin();
+      addLog(`${winner.seat === mySeat ? "You" : winner.name} won the hand!`, "trick_win");
     }
-  }, [state.currentTrick?.winnerSeat]);
+
+    // After 1.5s, clear the trick and move on
+    const timer = setTimeout(() => {
+      setTrickWinnerSeat(null);
+      dispatch({ type: "COMPLETE_TRICK" });
+    }, 1500);
+
+    return () => clearTimeout(timer);
+  }, [state.phase, state.completedTricks.length]);
 
   // ─── Round End ────────────────────────────────────────────────────────────
   useEffect(() => {
@@ -226,6 +246,28 @@ export default function GameScreen() {
   };
 
   const handleNextRound = () => {
+    // Save scores to database
+    try {
+      const scores = calculateRoundScores(state.players, state.winningTrio);
+      saveRoundMutation.mutate({
+        roomId: state.roomId,
+        groupName,
+        roundNumber: state.roundNumber,
+        trumpSuit: state.trumpSuit || undefined,
+        hasTrio: !!state.winningTrio,
+        scores: scores.map((s) => ({
+          playerName: state.players[s.seat]?.name || `Player ${s.seat + 1}`,
+          seat: s.seat,
+          handsWon: s.handsWon,
+          points: s.points,
+          hadTrio: state.winningTrio?.seat === s.seat,
+        })),
+      });
+    } catch (e) {
+      // Silently fail - don't block gameplay
+      console.warn("Failed to save scores:", e);
+    }
+
     dispatch({ type: "END_ROUND" });
     dispatch({ type: "NEXT_ROUND" });
     setShowRoundEnd(false);
@@ -329,6 +371,17 @@ export default function GameScreen() {
             color={muted ? "#81C784" : "#FFD700"}
           />
         </TouchableOpacity>
+
+        {/* Trick complete banner */}
+        {state.phase === "trick_complete" && state.currentTrick?.winnerSeat != null && (
+          <View style={styles.trickCompleteBanner}>
+            <Text style={styles.trickCompleteBannerText}>
+              {state.currentTrick.winnerSeat === mySeat
+                ? "You won this hand!"
+                : `${state.players.find((p) => p.seat === state.currentTrick!.winnerSeat)?.name} won this hand!`}
+            </Text>
+          </View>
+        )}
 
         {/* Trump Banner - always visible */}
         {state.trumpSuit && (
@@ -723,6 +776,20 @@ const styles = StyleSheet.create({
   // ─── Main Game ──────────────────────────────────────────────────────────
   gameRoot: {
     flex: 1,
+  },
+  trickCompleteBanner: {
+    backgroundColor: "#FFD70020",
+    paddingVertical: 6,
+    paddingHorizontal: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: "#FFD70040",
+    zIndex: 10,
+  },
+  trickCompleteBannerText: {
+    color: "#FFD700",
+    fontSize: 13,
+    fontWeight: "700",
+    textAlign: "center",
   },
   muteBtn: {
     position: "absolute",

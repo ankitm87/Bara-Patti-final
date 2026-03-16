@@ -89,4 +89,121 @@ export async function getUserByOpenId(openId: string) {
   return result.length > 0 ? result[0] : undefined;
 }
 
-// TODO: add feature queries here as your schema grows.
+// ─── Game Session & Score Queries ─────────────────────────────────────────
+
+import { gameSessions, gameScores, InsertGameSession, InsertGameScore } from "../drizzle/schema";
+import { desc, sql } from "drizzle-orm";
+
+export async function createGameSession(data: InsertGameSession): Promise<number> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const result = await db.insert(gameSessions).values(data);
+  return Number(result[0].insertId);
+}
+
+export async function saveGameScores(scores: InsertGameScore[]): Promise<void> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  if (scores.length === 0) return;
+  await db.insert(gameScores).values(scores);
+}
+
+export async function getLeaderboard(groupName?: string) {
+  const db = await getDb();
+  if (!db) return [];
+
+  const conditions = groupName
+    ? sql`WHERE ${gameScores.groupName} = ${groupName}`
+    : sql``;
+
+  const result = await db.execute(sql`
+    SELECT
+      playerName,
+      groupName,
+      COUNT(*) as gamesPlayed,
+      SUM(points) as totalPoints,
+      SUM(handsWon) as totalHandsWon,
+      SUM(CASE WHEN hadTrio = 1 THEN 1 ELSE 0 END) as trioCount,
+      MAX(createdAt) as lastPlayed
+    FROM game_scores
+    ${conditions}
+    GROUP BY playerName, groupName
+    ORDER BY totalPoints DESC
+  `);
+
+  return (result[0] as unknown as any[]).map((row: any) => ({
+    playerName: row.playerName as string,
+    groupName: row.groupName as string,
+    gamesPlayed: Number(row.gamesPlayed),
+    totalPoints: Number(row.totalPoints),
+    totalHandsWon: Number(row.totalHandsWon),
+    trioCount: Number(row.trioCount),
+    lastPlayed: row.lastPlayed as string,
+  }));
+}
+
+export async function getGroupNames(): Promise<string[]> {
+  const db = await getDb();
+  if (!db) return [];
+
+  const result = await db.execute(sql`
+    SELECT DISTINCT groupName FROM game_scores ORDER BY groupName
+  `);
+
+  return (result[0] as unknown as any[]).map((row: any) => row.groupName as string);
+}
+
+export async function getRecentGames(groupName?: string, limit = 20) {
+  const db = await getDb();
+  if (!db) return [];
+
+  const conditions = groupName
+    ? sql`WHERE gs.groupName = ${groupName}`
+    : sql``;
+
+  const result = await db.execute(sql`
+    SELECT
+      gs.id as sessionId,
+      gs.roomId,
+      gs.groupName,
+      gs.roundNumber,
+      gs.trumpSuit,
+      gs.hasTrio,
+      gs.createdAt,
+      gsc.playerName,
+      gsc.handsWon,
+      gsc.points,
+      gsc.hadTrio
+    FROM game_sessions gs
+    JOIN game_scores gsc ON gsc.sessionId = gs.id
+    ${conditions}
+    ORDER BY gs.createdAt DESC, gsc.seat ASC
+    LIMIT ${limit * 4}
+  `);
+
+  // Group by session
+  const sessions = new Map<number, any>();
+  for (const row of result[0] as unknown as any[]) {
+    const sid = Number(row.sessionId);
+    if (!sessions.has(sid)) {
+      sessions.set(sid, {
+        sessionId: sid,
+        roomId: row.roomId,
+        groupName: row.groupName,
+        roundNumber: Number(row.roundNumber),
+        trumpSuit: row.trumpSuit,
+        hasTrio: Boolean(row.hasTrio),
+        createdAt: row.createdAt,
+        players: [],
+      });
+    }
+    sessions.get(sid)!.players.push({
+      playerName: row.playerName,
+      handsWon: Number(row.handsWon),
+      points: Number(row.points),
+      hadTrio: Boolean(row.hadTrio),
+    });
+  }
+
+  return Array.from(sessions.values());
+}

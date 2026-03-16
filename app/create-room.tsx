@@ -5,7 +5,7 @@ import {
   TouchableOpacity,
   StyleSheet,
   Platform,
-  Alert,
+  TextInput,
 } from "react-native";
 import { useRouter } from "expo-router";
 import { ScreenContainer } from "@/components/screen-container";
@@ -14,6 +14,7 @@ import { useGame } from "@/lib/game-context";
 import { generateRoomCode } from "@/lib/game-engine";
 import * as Linking from "expo-linking";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 export default function CreateRoomScreen() {
   const router = useRouter();
@@ -22,12 +23,22 @@ export default function CreateRoomScreen() {
   const [roomCode, setRoomCode] = useState("");
   const [copied, setCopied] = useState(false);
   const [playersJoined, setPlayersJoined] = useState(1);
+  const [groupName, setGroupName] = useState("Family");
 
   useEffect(() => {
     const code = generateRoomCode();
     setRoomCode(code);
     dispatch({ type: "CREATE_ROOM", roomId: code });
+    // Load saved group name
+    AsyncStorage.getItem("bara-patti-group-name").then((name) => {
+      if (name) setGroupName(name);
+    });
   }, []);
+
+  const handleGroupNameChange = (text: string) => {
+    setGroupName(text);
+    AsyncStorage.setItem("bara-patti-group-name", text);
+  };
 
   const handleCopyCode = async () => {
     if (Platform.OS === "web") {
@@ -42,7 +53,7 @@ export default function CreateRoomScreen() {
   };
 
   const handleShareWhatsApp = () => {
-    const message = `Join my Bara Patti game! 🃏\n\nRoom Code: ${roomCode}\n\nOpen the Bara Patti app and enter this code to join.`;
+    const message = `Join my Bara Patti game! 🃏\n\nRoom Code: ${roomCode}\nGroup: ${groupName}\n\nOpen the Bara Patti app and enter this code to join.`;
     const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(message)}`;
     Linking.openURL(whatsappUrl);
   };
@@ -57,7 +68,6 @@ export default function CreateRoomScreen() {
   };
 
   const handleStartGame = () => {
-    // Navigate to lobby
     router.replace(`/lobby/${roomCode}` as any);
   };
 
@@ -78,6 +88,23 @@ export default function CreateRoomScreen() {
         </View>
 
         <View style={styles.content}>
+          {/* Group Name */}
+          <View style={styles.groupSection}>
+            <Text style={styles.groupLabel}>Group Name</Text>
+            <TextInput
+              style={styles.groupInput}
+              value={groupName}
+              onChangeText={handleGroupNameChange}
+              placeholder="e.g. Family, Friends, Office"
+              placeholderTextColor="#2E7D32"
+              returnKeyType="done"
+              maxLength={40}
+            />
+            <Text style={styles.groupHint}>
+              Scores are grouped by this name on the leaderboard
+            </Text>
+          </View>
+
           {/* Room Code Display */}
           <View style={styles.codeSection}>
             <Text style={styles.codeLabel}>Your Room Code</Text>
@@ -224,11 +251,38 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
-    gap: 24,
+    gap: 20,
   },
+  // Group name
+  groupSection: {
+    gap: 6,
+  },
+  groupLabel: {
+    fontSize: 13,
+    color: "#A5D6A7",
+    fontWeight: "700",
+    textTransform: "uppercase",
+    letterSpacing: 1,
+  },
+  groupInput: {
+    backgroundColor: "#1A4D1E",
+    borderRadius: 10,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#FFD700",
+    borderWidth: 1,
+    borderColor: "#2E7D32",
+  },
+  groupHint: {
+    fontSize: 12,
+    color: "#81C784",
+  },
+  // Code section
   codeSection: {
     alignItems: "center",
-    paddingVertical: 20,
+    paddingVertical: 12,
   },
   codeLabel: {
     fontSize: 14,
