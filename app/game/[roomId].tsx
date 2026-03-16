@@ -43,15 +43,15 @@ import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { useSound } from "@/hooks/use-sound";
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("window");
-const CARD_WIDTH_MY = 62;
-const CARD_OVERLAP_MY = 22;
+const CARD_WIDTH_MY = 58;
+const CARD_OVERLAP_MY = 30;
 
 export default function GameScreen() {
   const router = useRouter();
   const { roomId } = useLocalSearchParams<{ roomId: string }>();
   const { user } = useAuth();
   const { state, dispatch } = useGame();
-  const [selectedCard, setSelectedCard] = useState<Card | null>(null);
+  // selectedCard removed - single tap plays directly
   const [showTrioModal, setShowTrioModal] = useState(false);
   const [showRoundEnd, setShowRoundEnd] = useState(false);
   const [dealingCardIndex, setDealingCardIndex] = useState(0);
@@ -193,7 +193,7 @@ export default function GameScreen() {
     addLog(`You played ${getCardDisplay(card)}`);
     playCardPlay();
     dispatch({ type: "PLAY_CARD", seat: mySeat, card });
-    setSelectedCard(null);
+
   };
 
   const handleAutoPlay = () => {
@@ -343,7 +343,7 @@ export default function GameScreen() {
         {state.winningTrio && (
           <View style={styles.trioStrip}>
             <Text style={styles.trioStripText}>
-              {state.players[state.winningTrio.seat]?.name} has Trio of {state.winningTrio.trio.rank}s — others need 4 tricks
+              {state.players[state.winningTrio.seat]?.name} has Trio of {state.winningTrio.trio.rank}s — others need 4 hands
             </Text>
           </View>
         )}
@@ -449,7 +449,7 @@ export default function GameScreen() {
                 <Text style={[styles.myName, isMyTurn && { color: "#FFD700" }]}>
                   {isMyTurn ? "Your Turn" : "You"}
                 </Text>
-                <Text style={styles.myTricks}>Tricks: {myPlayer?.handsWon || 0}</Text>
+                <Text style={styles.myTricks}>Hands: {myPlayer?.handsWon || 0}</Text>
               </View>
             </View>
             {isMyTurn && (
@@ -483,7 +483,6 @@ export default function GameScreen() {
           >
             {myHand.map((card, i) => {
               const isValid = validCards.some((c) => c.id === card.id);
-              const isSelected = selectedCard?.id === card.id;
               const canTap = isMyTurn && isValid;
 
               return (
@@ -491,16 +490,11 @@ export default function GameScreen() {
                   key={card.id}
                   style={[
                     styles.myCardSlot,
-                    { marginLeft: i > 0 ? -CARD_OVERLAP_MY : 0, zIndex: isSelected ? 100 : i },
-                    isSelected && styles.myCardLifted,
+                    { marginLeft: i > 0 ? -CARD_OVERLAP_MY : 0, zIndex: i },
                   ]}
                   onPress={() => {
                     if (!canTap) return;
-                    if (isSelected) {
-                      handlePlayCard(card);
-                    } else {
-                      setSelectedCard(card);
-                    }
+                    handlePlayCard(card);
                   }}
                   activeOpacity={canTap ? 0.85 : 1}
                   disabled={!canTap}
@@ -508,25 +502,12 @@ export default function GameScreen() {
                   <PlayingCard
                     card={card}
                     size="large"
-                    highlighted={isSelected}
                     dimmed={isMyTurn && !isValid}
                   />
                 </TouchableOpacity>
               );
             })}
           </ScrollView>
-
-          {/* Play button when card is selected */}
-          {isMyTurn && selectedCard && validCards.some((c) => c.id === selectedCard.id) && (
-            <TouchableOpacity
-              style={styles.playBtn}
-              onPress={() => handlePlayCard(selectedCard)}
-              activeOpacity={0.8}
-            >
-              <MaterialIcons name="send" size={18} color="#0D3B0F" />
-              <Text style={styles.playBtnText}>Play Card</Text>
-            </TouchableOpacity>
-          )}
         </View>
       </View>
 
@@ -575,7 +556,7 @@ export default function GameScreen() {
             <View style={styles.scoreTable}>
               <View style={styles.scoreHeaderRow}>
                 <Text style={[styles.scoreHeaderCell, { flex: 2 }]}>Player</Text>
-                <Text style={styles.scoreHeaderCell}>Tricks</Text>
+                <Text style={styles.scoreHeaderCell}>Hands</Text>
                 <Text style={styles.scoreHeaderCell}>Points</Text>
               </View>
               {calculateRoundScores(state.players, state.winningTrio).map((score) => {
@@ -907,33 +888,15 @@ const styles = StyleSheet.create({
     fontWeight: "500",
   },
   myCardsScroll: {
-    paddingHorizontal: 14,
     paddingVertical: 6,
+    flexGrow: 1,
+    justifyContent: "center",
     alignItems: "flex-end",
   },
   myCardSlot: {
     // zIndex set inline
   },
-  myCardLifted: {
-    transform: [{ translateY: -14 }],
-  },
-  playBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 8,
-    backgroundColor: "#FFD700",
-    marginHorizontal: 16,
-    paddingVertical: 11,
-    borderRadius: 10,
-    marginTop: 4,
-    marginBottom: 4,
-  },
-  playBtnText: {
-    fontSize: 15,
-    fontWeight: "800",
-    color: "#0D3B0F",
-  },
+
   // ─── Modals ───────────────────────────────────────────────────────────
   modalOverlay: {
     flex: 1,

@@ -23,6 +23,7 @@ export default function LobbyScreen() {
   const { user } = useAuth();
   const { state, dispatch } = useGame();
   const [isReady, setIsReady] = useState(false);
+  const [hasStarted, setHasStarted] = useState(false);
 
   // Initialize room with current player
   useEffect(() => {
@@ -37,7 +38,7 @@ export default function LobbyScreen() {
     const alreadyIn = state.players.find(
       (p) => p.userId === (user?.openId || "local-player")
     );
-    if (!alreadyIn) {
+    if (!alreadyIn && state.players.length < 4) {
       const seat = state.players.length as Seat;
       dispatch({
         type: "ADD_PLAYER",
@@ -65,24 +66,27 @@ export default function LobbyScreen() {
       (p) => p.userId === (user?.openId || "local-player")
     )?.seat;
     if (mySeat !== undefined) {
-      dispatch({ type: "SET_PLAYER_READY", seat: mySeat, isReady: !isReady });
-      setIsReady(!isReady);
+      const newReady = !isReady;
+      dispatch({ type: "SET_PLAYER_READY", seat: mySeat, isReady: newReady });
+      setIsReady(newReady);
     }
   };
 
   const handleFillAI = () => {
+    const botNames = ["Amma", "Chachu", "Maasi"];
     const currentCount = state.players.length;
+    let botIdx = 0;
     for (let i = currentCount; i < 4; i++) {
       dispatch({
         type: "ADD_PLAYER",
         player: {
           seat: i as Seat,
-          name: `Bot ${i}`,
+          name: botNames[botIdx] || `Bot ${i}`,
           odId: `bot-${i}`,
-          odName: `Bot ${i}`,
+          odName: botNames[botIdx] || `Bot ${i}`,
           odEmail: "",
           odAvatar: "",
-          odInitials: `B${i}`,
+          odInitials: (botNames[botIdx] || `B${i}`)[0],
           odColor: SEAT_COLORS[i],
           userId: `bot-${i}`,
           hand: [],
@@ -91,21 +95,30 @@ export default function LobbyScreen() {
           hasDeclinedTrio: false,
         },
       });
+      botIdx++;
     }
   };
 
-  const handleStartGame = () => {
-    dispatch({ type: "START_DEALING" });
-    router.replace(`/game/${roomId}` as any);
-  };
-
-  const allReady = state.players.length === 4 && state.players.every((p) => p.isReady);
+  // Auto-start when all 4 players are ready
+  useEffect(() => {
+    if (hasStarted) return;
+    const allReady = state.players.length === 4 && state.players.every((p) => p.isReady);
+    if (allReady) {
+      setHasStarted(true);
+      dispatch({ type: "START_DEALING" });
+      setTimeout(() => {
+        router.replace(`/game/${roomId}` as any);
+      }, 200);
+    }
+  }, [state.players, hasStarted]);
 
   const handleShareWhatsApp = () => {
-    const message = `Join my Bara Patti game! 🃏\n\nRoom Code: ${roomId}\n\nOpen the Bara Patti app and enter this code to join.`;
+    const message = `Join my Bara Patti game! \u{1F0CF}\n\nRoom Code: ${roomId}\n\nOpen the Bara Patti app and enter this code to join.`;
     const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(message)}`;
     Linking.openURL(whatsappUrl);
   };
+
+  const allReady = state.players.length === 4 && state.players.every((p) => p.isReady);
 
   return (
     <ScreenContainer edges={["top", "bottom", "left", "right"]}>
@@ -155,7 +168,7 @@ export default function LobbyScreen() {
 
             {/* Center */}
             <View style={styles.tableCenter}>
-              <Text style={styles.tableCenterText}>🃏</Text>
+              <Text style={styles.tableCenterText}>{"\u{1F0CF}"}</Text>
               <Text style={styles.tableCenterLabel}>
                 {state.players.length}/4 Players
               </Text>
@@ -184,6 +197,17 @@ export default function LobbyScreen() {
 
         {/* Actions */}
         <View style={styles.actions}>
+          {state.players.length < 4 && (
+            <TouchableOpacity
+              style={styles.fillButton}
+              onPress={handleFillAI}
+              activeOpacity={0.7}
+            >
+              <MaterialIcons name="smart-toy" size={18} color="#A5D6A7" />
+              <Text style={styles.fillButtonText}>Fill with Bots</Text>
+            </TouchableOpacity>
+          )}
+
           <TouchableOpacity
             style={[styles.readyButton, isReady && styles.readyButtonActive]}
             onPress={handleReady}
@@ -204,26 +228,11 @@ export default function LobbyScreen() {
             </Text>
           </TouchableOpacity>
 
-          {state.players.length < 4 && (
-            <TouchableOpacity
-              style={styles.fillButton}
-              onPress={handleFillAI}
-              activeOpacity={0.7}
-            >
-              <MaterialIcons name="smart-toy" size={18} color="#A5D6A7" />
-              <Text style={styles.fillButtonText}>Fill with Bots</Text>
-            </TouchableOpacity>
-          )}
-
           {allReady && (
-            <TouchableOpacity
-              style={styles.startButton}
-              onPress={handleStartGame}
-              activeOpacity={0.8}
-            >
-              <Text style={styles.startButtonText}>Start Game</Text>
-              <MaterialIcons name="play-arrow" size={24} color="#0D3B0F" />
-            </TouchableOpacity>
+            <View style={styles.startingRow}>
+              <MaterialIcons name="hourglass-top" size={18} color="#FFD700" />
+              <Text style={styles.startingText}>Starting game...</Text>
+            </View>
           )}
         </View>
       </View>
@@ -407,7 +416,7 @@ const styles = StyleSheet.create({
   },
   actions: {
     gap: 12,
-    paddingBottom: 20,
+    paddingBottom: 24,
   },
   readyButton: {
     flexDirection: "row",
@@ -438,24 +447,26 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     gap: 8,
     paddingVertical: 12,
+    backgroundColor: "#163318",
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: "#2E7D3280",
   },
   fillButtonText: {
     color: "#A5D6A7",
     fontSize: 14,
     fontWeight: "600",
   },
-  startButton: {
+  startingRow: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
     gap: 8,
-    backgroundColor: "#FFD700",
-    paddingVertical: 16,
-    borderRadius: 14,
+    paddingVertical: 8,
   },
-  startButtonText: {
-    fontSize: 18,
-    fontWeight: "800",
-    color: "#0D3B0F",
+  startingText: {
+    color: "#FFD700",
+    fontSize: 15,
+    fontWeight: "700",
   },
 });

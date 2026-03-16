@@ -63,7 +63,7 @@ export function PlayerPanel({
             {displayName}
           </Text>
           <View style={styles.tricksRow}>
-            <Text style={styles.tricksLabel}>Tricks:</Text>
+            <Text style={styles.tricksLabel}>Hands:</Text>
             <Text style={[styles.tricksValue, { color: seatColor }]}>{player.handsWon}</Text>
           </View>
         </View>

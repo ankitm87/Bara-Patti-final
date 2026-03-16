@@ -39,7 +39,7 @@ describe("Trump escalation - cutting with trump", () => {
     expect(valid[0].id).toBe("hearts-K");
   });
 
-  it("when someone cut with trump and player has no higher trump, can play any card", () => {
+  it("when someone cut with trump and player has no higher trump, must still play trump", () => {
     const hand: Card[] = [
       { suit: "hearts", rank: "3", id: "hearts-3" },
       { suit: "spades", rank: "A", id: "spades-A" },
@@ -54,9 +54,10 @@ describe("Trump escalation - cutting with trump", () => {
       ],
       winnerSeat: null,
     };
-    // Player has no diamonds, has hearts 3 (lower than K). Can play anything.
+    // Player has no diamonds, has hearts 3 (lower than K). Must still play trump (compulsory cut).
     const valid = getValidCards(hand, trick, trumpSuit, false, false);
-    expect(valid.length).toBe(3);
+    expect(valid.length).toBe(1);
+    expect(valid[0].suit).toBe("hearts");
   });
 
   it("player with no suit and no trump can play any card", () => {

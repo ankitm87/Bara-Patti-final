@@ -115,7 +115,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       };
 
     case "FINISH_TRIO_CHECK": {
-      const startingSeat = getStartingPlayer(state.dealerSeat);
+      const startingSeat = getStartingPlayer(state.dealerSeat, state.players, state.trumpSuit ?? undefined);
       return {
         ...state,
         phase: "playing",

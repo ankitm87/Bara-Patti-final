@@ -256,22 +256,28 @@ export function getValidCards(
     return sameSuitCards;
   }
 
-  // Cannot follow suit - can play trump or any card
+  // Cannot follow suit — MUST cut with trump if you have trump cards
   const trumpCards = hand.filter((c) => c.suit === trumpSuit);
 
-  // If trump was played (someone cut), must play higher trump if possible
-  if (trumpPlayedInTrick && trumpCards.length > 0) {
-    const highestTrumpInTrick = getHighestTrumpInTrick(currentTrick, trumpSuit);
-    if (highestTrumpInTrick) {
-      const higherTrumps = trumpCards.filter(
-        (c) => RANK_ORDER[c.rank] > RANK_ORDER[highestTrumpInTrick.rank]
-      );
-      if (higherTrumps.length > 0) return higherTrumps;
+  if (trumpCards.length > 0) {
+    // Player has trump — must play trump (compulsory cut)
+    if (trumpPlayedInTrick) {
+      // Someone already cut with trump — must play HIGHER trump if possible
+      const highestTrumpInTrick = getHighestTrumpInTrick(currentTrick, trumpSuit);
+      if (highestTrumpInTrick) {
+        const higherTrumps = trumpCards.filter(
+          (c) => RANK_ORDER[c.rank] > RANK_ORDER[highestTrumpInTrick.rank]
+        );
+        if (higherTrumps.length > 0) return higherTrumps;
+      }
+      // Has trump but no higher trump — must still play a trump card
+      return trumpCards;
     }
-    // Has trump but no higher trump - can play any trump or any card
+    // No trump played yet — must cut with any trump
+    return trumpCards;
   }
 
-  // Can play anything
+  // No trump cards either — can play any card
   return hand;
 }
 
@@ -401,8 +407,17 @@ export function startNewRound(state: GameState): GameState {
   };
 }
 
-/** Get the starting player (left of dealer) */
-export function getStartingPlayer(dealerSeat: Seat): Seat {
+/** Get the starting player - whoever has the Ace of opposite suit of trump */
+export function getStartingPlayer(dealerSeat: Seat, players?: PlayerState[], trumpSuit?: Suit): Seat {
+  if (players && trumpSuit) {
+    const oppSuit = getOppositeSuit(trumpSuit);
+    for (const player of players) {
+      if (player.hand.some((c) => c.rank === "A" && c.suit === oppSuit)) {
+        return player.seat;
+      }
+    }
+  }
+  // Fallback: left of dealer
   return ((dealerSeat + 1) % 4) as Seat;
 }
 

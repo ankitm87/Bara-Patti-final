@@ -44,18 +44,18 @@ export function LegalMoveHint({
         hint = `Follow ${getSuitSymbol(leadSuit)} suit`;
       }
     } else {
-      const trumpInTrick = currentTrick.cards.some(
-        (c) => c.card.suit === trumpSuit && leadSuit !== trumpSuit
-      );
-      if (trumpInTrick) {
-        const hasTrump = hand.some((c) => c.suit === trumpSuit);
-        if (hasTrump) {
-          hint = `Play higher ${getSuitSymbol(trumpSuit)} trump or any card`;
+      const hasTrump = hand.some((c) => c.suit === trumpSuit);
+      if (hasTrump) {
+        const trumpInTrick = currentTrick.cards.some(
+          (c) => c.card.suit === trumpSuit && leadSuit !== trumpSuit
+        );
+        if (trumpInTrick) {
+          hint = `Must play higher ${getSuitSymbol(trumpSuit)} trump`;
         } else {
-          hint = "Play any card";
+          hint = `Must cut with ${getSuitSymbol(trumpSuit)} trump`;
         }
       } else {
-        hint = "Cut with trump or play any card";
+        hint = "No suit or trump — play any card";
       }
     }
   } else {

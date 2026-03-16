@@ -13,7 +13,7 @@ const SEAT_COLORS = ["#4ADE80", "#60A5FA", "#FB923C", "#F472B6"];
 export function TrickScoreboard({ players, currentPlayerSeat, mySeat }: TrickScoreboardProps) {
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Tricks</Text>
+      <Text style={styles.title}>Hands</Text>
       {players.map((player) => (
         <View
           key={player.seat}

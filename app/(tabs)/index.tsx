@@ -174,7 +174,7 @@ export default function HomeScreen() {
             <View style={styles.infoRow}>
               <Text style={styles.infoEmoji}>🃏</Text>
               <Text style={styles.infoText}>
-                48 cards (no 2s), 4 players, 12 tricks per round
+                48 cards (no 2s), 4 players, 12 hands per round
               </Text>
             </View>
             <View style={styles.infoRow}>

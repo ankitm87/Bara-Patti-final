@@ -25,7 +25,7 @@ export function TrumpBanner({ trumpSuit, trickNumber, totalTricks }: TrumpBanner
         </Text>
       </View>
       <View style={styles.trickSection}>
-        <Text style={styles.trickLabel}>Trick</Text>
+        <Text style={styles.trickLabel}>Hand</Text>
         <Text style={styles.trickNumber}>
           {trickNumber}/{totalTricks}
         </Text>

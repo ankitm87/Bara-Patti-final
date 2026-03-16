@@ -317,7 +317,7 @@ describe("getValidCards", () => {
     expect(valid.every((c) => c.suit === "diamonds")).toBe(true);
   });
 
-  it("can play any card when cannot follow suit and no trump in trick", () => {
+  it("must cut with trump when cannot follow suit and has trump", () => {
     const hand: Card[] = [
       { suit: "hearts", rank: "K", id: "hearts-K" },
       { suit: "clubs", rank: "A", id: "clubs-A" },
@@ -335,6 +335,30 @@ describe("getValidCards", () => {
       winnerSeat: null,
     };
     const valid = getValidCards(hand, trick, trumpSuit, false, false);
+    // Must play trump (hearts K) - compulsory cut
+    expect(valid.length).toBe(1);
+    expect(valid[0].suit).toBe("hearts");
+  });
+
+  it("can play any card when cannot follow suit and has NO trump", () => {
+    const hand: Card[] = [
+      { suit: "clubs", rank: "A", id: "clubs-A" },
+      { suit: "spades", rank: "Q", id: "spades-Q" },
+      { suit: "clubs", rank: "3", id: "clubs-3" },
+    ];
+    const trick: Trick = {
+      trickNumber: 2,
+      leadSeat: 1 as Seat,
+      cards: [
+        {
+          seat: 1 as Seat,
+          card: { suit: "diamonds", rank: "J", id: "diamonds-J" },
+        },
+      ],
+      winnerSeat: null,
+    };
+    const valid = getValidCards(hand, trick, trumpSuit, false, false);
+    // No diamonds, no hearts (trump) - can play anything
     expect(valid.length).toBe(3);
   });
 

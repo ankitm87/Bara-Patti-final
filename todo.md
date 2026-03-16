@@ -79,3 +79,17 @@
 - [x] Investigate game flow - can user reach the game screen?
 - [x] Check if sound files are valid (not 0-byte)
 - [x] Verify Create Game flow works end-to-end without auth requirement
+
+## V4 Bug Fixes & UX Improvements
+
+- [x] Fix: Lobby "Ready" button doesn't start the game / navigate to game table
+- [x] Fix: 4th player's card not visible when playing first (last card in trick hidden)
+- [x] Fix: Cards at right edge cut off - stack cards closer together (but not too narrow)
+- [x] Fix: Tab bar (Home, History, Profile) is cut off at the bottom
+- [x] Fix: Show trump suit prominently on the playing page
+- [x] Fix: Compulsory trump cut rule - must play trump if you don't have the led suit (only play random if you have neither led suit nor trump)
+- [x] Fix: Opposite suit starting rule - A of opposite suit must start, not random card
+- [x] Fix: In Quick Play the starting rule was not enforced correctly
+- [x] Rename: "Tricks" → "Hands" throughout the UI
+- [x] Fix: Center my cards horizontally (currently left-aligned)
+- [x] Fix: Remove "Play Card" prompt button - just tap card to play it directly
