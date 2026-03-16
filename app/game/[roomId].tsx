@@ -40,6 +40,7 @@ import {
   RANK_ORDER,
 } from "@/lib/game-engine";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
+import { useSound } from "@/hooks/use-sound";
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("window");
 const CARD_WIDTH_MY = 62;
@@ -58,6 +59,7 @@ export default function GameScreen() {
   const [activityLog, setActivityLog] = useState<LogEntry[]>([]);
   const [trickWinnerSeat, setTrickWinnerSeat] = useState<Seat | null>(null);
   const logIdRef = useRef(0);
+  const { muted, toggleMute, playShuffle, playCardPlay, playTrickWin } = useSound();
 
   const mySeat: Seat = 0;
   const myPlayer = state.players.find((p) => p.seat === mySeat);
@@ -101,6 +103,7 @@ export default function GameScreen() {
       if (botValid.length > 0) {
         const card = botValid[Math.floor(Math.random() * botValid.length)];
         addLog(`${botPlayer.name} played ${getCardDisplay(card)}`);
+        playCardPlay();
         dispatch({ type: "PLAY_CARD", seat: state.currentPlayerSeat, card });
       }
     }, 600 + Math.random() * 1000);
@@ -113,6 +116,7 @@ export default function GameScreen() {
     if (state.phase === "dealing") {
       setShowShuffling(true);
       setActivityLog([]);
+      playShuffle();
       const shuffleTimer = setTimeout(() => {
         setShowShuffling(false);
         let cardIdx = 0;
@@ -156,6 +160,7 @@ export default function GameScreen() {
       const winner = state.players.find((p) => p.seat === state.currentTrick!.winnerSeat);
       if (winner) {
         setTrickWinnerSeat(state.currentTrick.winnerSeat);
+        playTrickWin();
         addLog(`${winner.seat === mySeat ? "You" : winner.name} won the trick!`, "trick_win");
         setTimeout(() => setTrickWinnerSeat(null), 1200);
       }
@@ -172,6 +177,7 @@ export default function GameScreen() {
     if (!isMyTurn) return;
     if (!validCards.some((c) => c.id === card.id)) return;
     addLog(`You played ${getCardDisplay(card)}`);
+    playCardPlay();
     dispatch({ type: "PLAY_CARD", seat: mySeat, card });
     setSelectedCard(null);
   };
@@ -297,6 +303,19 @@ export default function GameScreen() {
   return (
     <ScreenContainer edges={["top", "left", "right"]}>
       <View style={styles.gameRoot}>
+        {/* Mute Toggle */}
+        <TouchableOpacity
+          style={styles.muteBtn}
+          onPress={toggleMute}
+          activeOpacity={0.7}
+        >
+          <MaterialIcons
+            name={muted ? "volume-off" : "volume-up"}
+            size={20}
+            color={muted ? "#81C784" : "#FFD700"}
+          />
+        </TouchableOpacity>
+
         {/* Trump Banner - always visible */}
         {state.trumpSuit && (
           <TrumpBanner
@@ -709,6 +728,20 @@ const styles = StyleSheet.create({
   // ─── Main Game ──────────────────────────────────────────────────────────
   gameRoot: {
     flex: 1,
+  },
+  muteBtn: {
+    position: "absolute",
+    top: 4,
+    right: 8,
+    zIndex: 50,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: "#0D3B0FCC",
+    justifyContent: "center",
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: "#2E7D3260",
   },
   trioStrip: {
     backgroundColor: "#FFD70018",

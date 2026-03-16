@@ -58,7 +58,17 @@
 - [x] Improved WhatsApp share message format
 - [ ] Reconnect support (60-second window)
 - [x] Mobile UX - prevent accidental card plays (tap-then-confirm)
-- [ ] Sound effects - shuffle, card play, trick win, timer warning
-- [ ] Mute toggle for sound effects
+- [x] Sound effects - shuffle, card play, trick win
+- [x] Mute toggle for sound effects
 - [x] Future-ready architecture for AI players, async, leaderboard
 - [x] V2 game engine tests (14 additional tests passing)
+
+## V3 Sound Effects
+
+- [x] Download free sound effects (shuffle, card play, trick win)
+- [x] Build SoundManager utility with expo-audio
+- [x] Integrate shuffle sound into dealing animation
+- [x] Integrate card play sound when a card is played
+- [x] Integrate trick win sound when a trick is won
+- [x] Add mute toggle to game screen UI
+- [x] Persist mute preference with AsyncStorage

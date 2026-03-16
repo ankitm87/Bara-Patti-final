@@ -23,6 +23,8 @@ const MAPPING = {
   "checkmark.circle.fill": "check-circle",
   "square.and.arrow.up.fill": "share",
   "doc.on.clipboard.fill": "content-copy",
+  "speaker.wave.2.fill": "volume-up",
+  "speaker.slash.fill": "volume-off",
 } as IconMapping;
 
 export function IconSymbol({
