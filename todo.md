@@ -175,3 +175,10 @@
 - [x] Replace card play sound with realistic casino chip/card sound
 - [x] Replace win sound with realistic casino applause/bell
 - [ ] Test animations on device for smoothness
+
+## V15 Layout Adjustments
+
+- [x] Revert home page to original compact layout (no scrolling)
+- [x] Enlarge game play screen fonts and layout for better readability
+- [x] Increase player names, card info, and turn timer sizes on game screen
+- [x] Optimize spacing on game screen to use available space

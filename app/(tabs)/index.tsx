@@ -94,126 +94,121 @@ export default function HomeScreen() {
 
   return (
     <ScreenContainer className="p-0">
-      <ScrollView
-        contentContainerStyle={{ flexGrow: 1 }}
-        showsVerticalScrollIndicator={false}
-      >
-        <View style={styles.container}>
-          {/* Header */}
-          <View style={styles.header}>
-            <Text style={styles.title}>Bara Patti</Text>
-            <Text style={styles.subtitle}>The Classic Card Game</Text>
-          </View>
+      <View style={styles.container}>
+        {/* Header */}
+        <View style={styles.header}>
+          <Text style={styles.title}>Bara Patti</Text>
+          <Text style={styles.subtitle}>The Classic Card Game</Text>
+        </View>
 
-          {/* User greeting */}
-          {isAuthenticated && user && (
-            <View style={styles.greeting}>
-              <View style={styles.avatar}>
-                <Text style={styles.avatarText}>
-                  {(user.name || user.email || "?")[0].toUpperCase()}
+        {/* User greeting */}
+        {isAuthenticated && user && (
+          <View style={styles.greeting}>
+            <View style={styles.avatar}>
+              <Text style={styles.avatarText}>
+                {(user.name || user.email || "?")[0].toUpperCase()}
+              </Text>
+            </View>
+            <Text style={styles.greetingText}>
+              Welcome, {user.name || user.email?.split("@")[0] || "Player"}
+            </Text>
+          </View>
+        )}
+
+        {/* Quick Play - Main CTA */}
+        <TouchableOpacity
+          style={styles.quickPlayButton}
+          onPress={handleQuickPlay}
+          activeOpacity={0.8}
+        >
+          <View style={styles.quickPlayIcon}>
+            <MaterialIcons name="play-arrow" size={36} color="#0D3B0F" />
+          </View>
+          <View style={styles.quickPlayTextWrap}>
+            <Text style={styles.quickPlayTitle}>Quick Play</Text>
+            <Text style={styles.quickPlaySub}>
+              Start instantly with 3 bot players
+            </Text>
+          </View>
+        </TouchableOpacity>
+
+        {/* Multiplayer Actions */}
+        <View style={styles.multiplayerSection}>
+          <Text style={styles.sectionLabel}>Play with Friends</Text>
+          <View style={styles.actions}>
+            <TouchableOpacity
+              style={styles.secondaryButton}
+              onPress={handleCreateGame}
+              activeOpacity={0.8}
+            >
+              <MaterialIcons name="add-circle" size={24} color="#FFD700" />
+              <View style={styles.buttonTextContainer}>
+                <Text style={styles.secondaryButtonText}>Create Game</Text>
+                <Text style={styles.secondaryButtonSub}>
+                  Invite friends with a code
                 </Text>
               </View>
-              <Text style={styles.greetingText}>
-                Welcome, {user.name || user.email?.split("@")[0] || "Player"}
-              </Text>
-            </View>
-          )}
-
-          {/* Quick Play - Main CTA */}
-          <TouchableOpacity
-            style={styles.quickPlayButton}
-            onPress={handleQuickPlay}
-            activeOpacity={0.85}
-          >
-            <View style={styles.quickPlayIcon}>
-              <MaterialIcons name="play-arrow" size={44} color="#0F1419" />
-            </View>
-            <View style={styles.quickPlayTextWrap}>
-              <Text style={styles.quickPlayTitle}>Quick Play</Text>
-              <Text style={styles.quickPlaySub}>
-                Start instantly with 3 bot players
-              </Text>
-            </View>
-          </TouchableOpacity>
-
-          {/* Multiplayer Actions */}
-          <View style={styles.multiplayerSection}>
-            <Text style={styles.sectionLabel}>Play with Friends</Text>
-            <View style={styles.actions}>
-              <TouchableOpacity
-                style={styles.secondaryButton}
-                onPress={handleCreateGame}
-                activeOpacity={0.85}
-              >
-                <MaterialIcons name="add-circle" size={32} color="#FFD700" />
-                <View style={styles.buttonTextContainer}>
-                  <Text style={styles.secondaryButtonText}>Create Game</Text>
-                  <Text style={styles.secondaryButtonSub}>
-                    Invite friends with a code
-                  </Text>
-                </View>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={styles.secondaryButton}
-                onPress={handleJoinGame}
-                activeOpacity={0.85}
-              >
-                <MaterialIcons name="group-add" size={32} color="#FFD700" />
-                <View style={styles.buttonTextContainer}>
-                  <Text style={styles.secondaryButtonText}>Join Game</Text>
-                  <Text style={styles.secondaryButtonSub}>
-                    Enter an invite code
-                  </Text>
-                </View>
-              </TouchableOpacity>
-            </View>
-          </View>
-
-          {/* Game Info Card */}
-          <View style={styles.infoCard}>
-            <Text style={styles.infoTitle}>How to Play</Text>
-            <View style={styles.infoRow}>
-              <Text style={styles.infoEmoji}>🃏</Text>
-              <Text style={styles.infoText}>
-                48 cards (no 2s), 4 players, 12 hands per round
-              </Text>
-            </View>
-            <View style={styles.infoRow}>
-              <Text style={styles.infoEmoji}>👑</Text>
-              <Text style={styles.infoText}>
-                Last card dealt to dealer is the trump
-              </Text>
-            </View>
-            <View style={styles.infoRow}>
-              <Text style={styles.infoEmoji}>🏆</Text>
-              <Text style={styles.infoText}>
-                Win a trio (3 of a kind) for bonus points
-              </Text>
-            </View>
-            <View style={styles.infoRow}>
-              <Text style={styles.infoEmoji}>⏱️</Text>
-              <Text style={styles.infoText}>
-                20 seconds per turn - play fast!
-              </Text>
-            </View>
-          </View>
-
-          {/* Login prompt if not authenticated */}
-          {!isAuthenticated && !loading && (
-            <TouchableOpacity
-              style={styles.loginPrompt}
-              onPress={() => router.push("/login")}
-              activeOpacity={0.85}
-            >
-              <MaterialIcons name="login" size={24} color="#FFD700" />
-              <Text style={styles.loginPromptText}>
-                Sign in to play with friends
-              </Text>
             </TouchableOpacity>
-          )}
+
+            <TouchableOpacity
+              style={styles.secondaryButton}
+              onPress={handleJoinGame}
+              activeOpacity={0.8}
+            >
+              <MaterialIcons name="group-add" size={24} color="#FFD700" />
+              <View style={styles.buttonTextContainer}>
+                <Text style={styles.secondaryButtonText}>Join Game</Text>
+                <Text style={styles.secondaryButtonSub}>
+                  Enter an invite code
+                </Text>
+              </View>
+            </TouchableOpacity>
+          </View>
         </View>
-      </ScrollView>
+
+        {/* Game Info Card */}
+        <View style={styles.infoCard}>
+          <Text style={styles.infoTitle}>How to Play</Text>
+          <View style={styles.infoRow}>
+            <Text style={styles.infoEmoji}>🃏</Text>
+            <Text style={styles.infoText}>
+              48 cards (no 2s), 4 players, 12 hands per round
+            </Text>
+          </View>
+          <View style={styles.infoRow}>
+            <Text style={styles.infoEmoji}>👑</Text>
+            <Text style={styles.infoText}>
+              Last card dealt to dealer is the trump
+            </Text>
+          </View>
+          <View style={styles.infoRow}>
+            <Text style={styles.infoEmoji}>🏆</Text>
+            <Text style={styles.infoText}>
+              Win a trio (3 of a kind) for bonus points
+            </Text>
+          </View>
+          <View style={styles.infoRow}>
+            <Text style={styles.infoEmoji}>⏱️</Text>
+            <Text style={styles.infoText}>
+              20 seconds per turn - play fast!
+            </Text>
+          </View>
+        </View>
+
+        {/* Login prompt if not authenticated */}
+        {!isAuthenticated && !loading && (
+          <TouchableOpacity
+            style={styles.loginPrompt}
+            onPress={() => router.push("/login")}
+            activeOpacity={0.8}
+          >
+            <MaterialIcons name="login" size={20} color="#FFD700" />
+            <Text style={styles.loginPromptText}>
+              Sign in to play with friends
+            </Text>
+          </TouchableOpacity>
+        )}
+      </View>
     </ScreenContainer>
   );
 }
@@ -221,79 +216,78 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    paddingHorizontal: 24,
-    paddingBottom: 40,
+    paddingHorizontal: 20,
+    paddingVertical: 16,
   },
   header: {
     alignItems: "center",
-    paddingTop: 32,
-    paddingBottom: 24,
+    paddingVertical: 12,
   },
   title: {
-    fontSize: 52,
-    fontWeight: "900",
+    fontSize: 36,
+    fontWeight: "800",
     color: "#FFD700",
-    letterSpacing: 2,
+    letterSpacing: 1,
   },
   subtitle: {
-    fontSize: 18,
+    fontSize: 14,
     color: "#D4AF37",
-    fontWeight: "600",
-    letterSpacing: 3,
+    fontWeight: "500",
+    letterSpacing: 2,
     textTransform: "uppercase",
-    marginTop: 8,
+    marginTop: 4,
   },
   greeting: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 16,
-    paddingVertical: 20,
-    paddingHorizontal: 20,
+    gap: 12,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
     backgroundColor: "#1A1F2E",
-    borderRadius: 16,
-    marginBottom: 28,
-    borderWidth: 2,
+    borderRadius: 12,
+    marginBottom: 16,
+    borderWidth: 1,
     borderColor: "#D4AF37",
   },
   avatar: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     backgroundColor: "#FFD700",
     justifyContent: "center",
     alignItems: "center",
   },
   avatarText: {
     color: "#0F1419",
-    fontSize: 28,
+    fontSize: 18,
     fontWeight: "900",
   },
   greetingText: {
     color: "#FFFFFF",
-    fontSize: 20,
-    fontWeight: "700",
+    fontSize: 14,
+    fontWeight: "600",
   },
   // Quick Play
   quickPlayButton: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 20,
+    gap: 16,
     backgroundColor: "#FFD700",
-    paddingVertical: 32,
-    paddingHorizontal: 24,
-    borderRadius: 20,
-    marginBottom: 32,
+    paddingVertical: 20,
+    paddingHorizontal: 20,
+    borderRadius: 18,
+    marginBottom: 16,
     shadowColor: "#FFD700",
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.5,
-    shadowRadius: 16,
-    elevation: 10,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 6,
   },
   quickPlayIcon: {
-    width: 72,
-    height: 72,
-    borderRadius: 36,
-    backgroundColor: "#FFFFFF40",
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: "#FFFFFF30",
     justifyContent: "center",
     alignItems: "center",
   },
@@ -301,86 +295,86 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   quickPlayTitle: {
-    fontSize: 28,
-    fontWeight: "900",
-    color: "#0F1419",
+    fontSize: 22,
+    fontWeight: "800",
+    color: "#0D3B0F",
   },
   quickPlaySub: {
-    fontSize: 16,
-    color: "#1A1F2E",
-    fontWeight: "600",
-    marginTop: 4,
+    fontSize: 14,
+    color: "#1B5E20",
+    fontWeight: "500",
+    marginTop: 2,
   },
   // Multiplayer section
   multiplayerSection: {
-    marginBottom: 28,
+    marginBottom: 12,
   },
   sectionLabel: {
-    fontSize: 16,
+    fontSize: 13,
     color: "#D4AF37",
-    fontWeight: "800",
+    fontWeight: "700",
     textTransform: "uppercase",
-    letterSpacing: 2,
-    marginBottom: 16,
+    letterSpacing: 1,
+    marginBottom: 8,
   },
   actions: {
-    gap: 14,
+    gap: 10,
   },
   secondaryButton: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 18,
+    gap: 14,
     backgroundColor: "#1A1F2E",
-    paddingVertical: 22,
-    paddingHorizontal: 20,
-    borderRadius: 16,
-    borderWidth: 2,
+    paddingVertical: 16,
+    paddingHorizontal: 18,
+    borderRadius: 14,
+    borderWidth: 1,
     borderColor: "#D4AF37",
   },
   buttonTextContainer: {
     flex: 1,
   },
   secondaryButtonText: {
-    fontSize: 20,
-    fontWeight: "800",
+    fontSize: 16,
+    fontWeight: "700",
     color: "#FFD700",
   },
   secondaryButtonSub: {
-    fontSize: 15,
+    fontSize: 12,
     color: "#A0A0A0",
-    marginTop: 4,
+    marginTop: 2,
   },
   // Info card
   infoCard: {
     backgroundColor: "#1A1F2E",
-    paddingVertical: 24,
-    paddingHorizontal: 20,
-    borderRadius: 16,
-    borderLeftWidth: 4,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 14,
+    borderLeftWidth: 3,
     borderLeftColor: "#FFD700",
-    marginBottom: 24,
+    marginBottom: 12,
   },
   infoTitle: {
-    fontSize: 22,
+    fontSize: 16,
     fontWeight: "800",
     color: "#FFD700",
-    marginBottom: 16,
+    marginBottom: 8,
   },
   infoRow: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 16,
-    marginBottom: 14,
+    gap: 12,
+    marginBottom: 8,
   },
   infoEmoji: {
-    fontSize: 28,
+    fontSize: 20,
   },
   infoText: {
     flex: 1,
-    fontSize: 16,
+    fontSize: 13,
     color: "#E0E0E0",
     fontWeight: "500",
-    lineHeight: 24,
+    lineHeight: 18,
   },
   // Login prompt
   loginPrompt: {
@@ -388,15 +382,15 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     gap: 12,
-    paddingVertical: 20,
-    paddingHorizontal: 24,
+    paddingVertical: 14,
+    paddingHorizontal: 20,
     backgroundColor: "#1A1F2E",
-    borderRadius: 16,
-    borderWidth: 2,
+    borderRadius: 14,
+    borderWidth: 1,
     borderColor: "#FFD700",
   },
   loginPromptText: {
-    fontSize: 18,
+    fontSize: 14,
     fontWeight: "700",
     color: "#FFD700",
   },

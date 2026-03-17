@@ -697,7 +697,7 @@ const styles = StyleSheet.create({
     gap: 16,
   },
   dealingCount: {
-    fontSize: 16,
+    fontSize: 20,
     color: "#A5D6A7",
     fontWeight: "700",
     fontVariant: ["tabular-nums"],
@@ -731,7 +731,7 @@ const styles = StyleSheet.create({
   },
   dealTargetName: {
     color: "#C8E6C9",
-    fontSize: 12,
+    fontSize: 15,
     fontWeight: "600",
   },
   trumpRevealBox: {
@@ -745,7 +745,7 @@ const styles = StyleSheet.create({
     marginHorizontal: 24,
   },
   trumpRevealTitle: {
-    fontSize: 24,
+    fontSize: 28,
     fontWeight: "800",
     color: "#FFD700",
   },
@@ -760,11 +760,11 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   trumpRevealSuit: {
-    fontSize: 28,
+    fontSize: 36,
     fontWeight: "800",
   },
   trumpRevealHint: {
-    fontSize: 13,
+    fontSize: 16,
     color: "#A5D6A7",
   },
   goldButton: {
@@ -776,7 +776,7 @@ const styles = StyleSheet.create({
     minWidth: 140,
   },
   goldButtonText: {
-    fontSize: 15,
+    fontSize: 18,
     fontWeight: "800",
     color: "#0D3B0F",
   },
@@ -791,7 +791,7 @@ const styles = StyleSheet.create({
     minWidth: 140,
   },
   outlineButtonText: {
-    fontSize: 15,
+    fontSize: 18,
     fontWeight: "700",
     color: "#A5D6A7",
   },
@@ -809,7 +809,7 @@ const styles = StyleSheet.create({
   },
   trickCompleteBannerText: {
     color: "#FFD700",
-    fontSize: 13,
+    fontSize: 16,
     fontWeight: "700",
     textAlign: "center",
   },
@@ -836,7 +836,7 @@ const styles = StyleSheet.create({
   },
   trioStripText: {
     color: "#FFD700",
-    fontSize: 11,
+    fontSize: 15,
     fontWeight: "700",
     textAlign: "center",
   },
@@ -948,7 +948,7 @@ const styles = StyleSheet.create({
   },
   myAvatarText: {
     color: "#FFFFFF",
-    fontSize: 14,
+    fontSize: 18,
     fontWeight: "800",
   },
   myDealerBadge: {
@@ -969,12 +969,12 @@ const styles = StyleSheet.create({
   },
   myName: {
     color: "#E8F5E9",
-    fontSize: 14,
+    fontSize: 18,
     fontWeight: "700",
   },
   myTricks: {
     color: "#81C784",
-    fontSize: 11,
+    fontSize: 15,
     fontWeight: "500",
   },
   myCardsScroll: {
@@ -1007,7 +1007,7 @@ const styles = StyleSheet.create({
     borderColor: "#FFD700",
   },
   trioModalTitle: {
-    fontSize: 20,
+    fontSize: 24,
     fontWeight: "800",
     color: "#FFD700",
   },
@@ -1031,7 +1031,7 @@ const styles = StyleSheet.create({
     gap: 16,
   },
   roundEndTitle: {
-    fontSize: 20,
+    fontSize: 24,
     fontWeight: "800",
     color: "#FFD700",
     textAlign: "center",
@@ -1048,7 +1048,7 @@ const styles = StyleSheet.create({
   scoreHeaderCell: {
     flex: 1,
     color: "#81C784",
-    fontSize: 11,
+    fontSize: 14,
     fontWeight: "700",
     textAlign: "center",
   },
@@ -1065,19 +1065,19 @@ const styles = StyleSheet.create({
   },
   scorePlayerName: {
     color: "#E8F5E9",
-    fontSize: 13,
+    fontSize: 16,
     fontWeight: "600",
   },
   scoreValue: {
     flex: 1,
     color: "#E8F5E9",
-    fontSize: 15,
+    fontSize: 18,
     fontWeight: "800",
     textAlign: "center",
   },
   scorePoints: {
     flex: 1,
-    fontSize: 15,
+    fontSize: 18,
     fontWeight: "800",
     textAlign: "center",
   },
