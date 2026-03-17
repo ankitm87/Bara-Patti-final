@@ -14,6 +14,7 @@ interface GameRoom {
 // ─── Game Room Management ─────────────────────────────────────────────────────
 
 const gameRooms = new Map<string, GameRoom>();
+const autoPlayTimers = new Map<string, NodeJS.Timeout>();
 
 export function initializeSocketIO(httpServer: HTTPServer) {
   const io = new SocketIOServer(httpServer, {
@@ -131,6 +132,13 @@ export function initializeSocketIO(httpServer: HTTPServer) {
 
       // Validate it's the current player's turn
       if (room.gameState.currentPlayerSeat !== data.seat) return;
+      
+      // Clear auto-play timer if player played in time
+      const timerId = `${data.roomId}-${data.seat}`;
+      if (autoPlayTimers.has(timerId)) {
+        clearTimeout(autoPlayTimers.get(timerId));
+        autoPlayTimers.delete(timerId);
+      }
 
       // Update game state (this would normally call the game engine)
       room.gameState.players = room.gameState.players.map((p) =>

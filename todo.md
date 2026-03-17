@@ -165,3 +165,13 @@
 - [x] Increase button sizes and touch targets for accessibility
 - [ ] Add premium animations and transitions
 - [ ] Refine card styling with shadow and depth effects
+
+## V14 Auto-Play, Animations & Sound Effects
+
+- [x] Implement server-side auto-play for timed-out players
+- [ ] Add smooth card dealing animations
+- [ ] Add smooth card playing animations
+- [ ] Add trick-winning animations
+- [x] Replace card play sound with realistic casino chip/card sound
+- [x] Replace win sound with realistic casino applause/bell
+- [ ] Test animations on device for smoothness
