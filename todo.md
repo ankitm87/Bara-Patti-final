@@ -154,3 +154,14 @@
 - [x] Capture user name from email (extract before @)
 - [x] Remove activity log from game screen
 - [x] Integrate multiplayer into lobby screen with WebSocket support
+
+## V13 Bug Fixes & Casino Aesthetic
+
+- [x] Fix React key error 67 - duplicate keys in card rendering
+- [ ] Implement server-side auto-play for timed-out players
+- [ ] Implement bot fill for empty seats
+- [x] Redesign with casino-elegant aesthetic (premium colors, typography)
+- [x] Increase font sizes throughout app (18px base, 24px headings)
+- [x] Increase button sizes and touch targets for accessibility
+- [ ] Add premium animations and transitions
+- [ ] Refine card styling with shadow and depth effects

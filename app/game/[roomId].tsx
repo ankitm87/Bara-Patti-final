@@ -593,8 +593,8 @@ export default function GameScreen() {
             <Text style={styles.trioModalTitle}>You Have a Trio!</Text>
             <View style={styles.trioCards}>
               {findTrios(myHand).length > 0 &&
-                findTrios(myHand)[0].cards.map((card) => (
-                  <PlayingCard key={card.id} card={card} size="xlarge" />
+                findTrios(myHand)[0].cards.map((card, idx) => (
+                  <PlayingCard key={`trio-${idx}-${card.id}`} card={card} size="xlarge" />
                 ))}
             </View>
             <CountdownTimer

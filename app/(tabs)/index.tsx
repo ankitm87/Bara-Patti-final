@@ -36,7 +36,7 @@ export default function HomeScreen() {
         odEmail: user?.email || "",
         odAvatar: "",
         odInitials: playerName[0].toUpperCase(),
-        odColor: "#4CAF50",
+        odColor: "#FFD700",
         userId: user?.openId || "local-player",
         hand: [],
         handsWon: 0,
@@ -47,7 +47,7 @@ export default function HomeScreen() {
 
     // Add 3 bot players
     const botNames = ["Amma", "Chachu", "Maasi"];
-    const botColors = ["#2196F3", "#FF9800", "#E91E63"];
+    const botColors = ["#2ECC71", "#E74C3C", "#3498DB"];
     for (let i = 1; i <= 3; i++) {
       dispatch({
         type: "ADD_PLAYER",
@@ -123,10 +123,10 @@ export default function HomeScreen() {
           <TouchableOpacity
             style={styles.quickPlayButton}
             onPress={handleQuickPlay}
-            activeOpacity={0.8}
+            activeOpacity={0.85}
           >
             <View style={styles.quickPlayIcon}>
-              <MaterialIcons name="play-arrow" size={36} color="#0D3B0F" />
+              <MaterialIcons name="play-arrow" size={44} color="#0F1419" />
             </View>
             <View style={styles.quickPlayTextWrap}>
               <Text style={styles.quickPlayTitle}>Quick Play</Text>
@@ -143,9 +143,9 @@ export default function HomeScreen() {
               <TouchableOpacity
                 style={styles.secondaryButton}
                 onPress={handleCreateGame}
-                activeOpacity={0.8}
+                activeOpacity={0.85}
               >
-                <MaterialIcons name="add-circle" size={24} color="#FFD700" />
+                <MaterialIcons name="add-circle" size={32} color="#FFD700" />
                 <View style={styles.buttonTextContainer}>
                   <Text style={styles.secondaryButtonText}>Create Game</Text>
                   <Text style={styles.secondaryButtonSub}>
@@ -157,9 +157,9 @@ export default function HomeScreen() {
               <TouchableOpacity
                 style={styles.secondaryButton}
                 onPress={handleJoinGame}
-                activeOpacity={0.8}
+                activeOpacity={0.85}
               >
-                <MaterialIcons name="group-add" size={24} color="#FFD700" />
+                <MaterialIcons name="group-add" size={32} color="#FFD700" />
                 <View style={styles.buttonTextContainer}>
                   <Text style={styles.secondaryButtonText}>Join Game</Text>
                   <Text style={styles.secondaryButtonSub}>
@@ -204,9 +204,9 @@ export default function HomeScreen() {
             <TouchableOpacity
               style={styles.loginPrompt}
               onPress={() => router.push("/login")}
-              activeOpacity={0.8}
+              activeOpacity={0.85}
             >
-              <MaterialIcons name="login" size={20} color="#FFD700" />
+              <MaterialIcons name="login" size={24} color="#FFD700" />
               <Text style={styles.loginPromptText}>
                 Sign in to play with friends
               </Text>
@@ -221,77 +221,79 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    paddingHorizontal: 20,
-    paddingBottom: 32,
+    paddingHorizontal: 24,
+    paddingBottom: 40,
   },
   header: {
     alignItems: "center",
-    paddingTop: 24,
-    paddingBottom: 16,
+    paddingTop: 32,
+    paddingBottom: 24,
   },
   title: {
-    fontSize: 36,
-    fontWeight: "800",
+    fontSize: 52,
+    fontWeight: "900",
     color: "#FFD700",
-    letterSpacing: 1,
+    letterSpacing: 2,
   },
   subtitle: {
-    fontSize: 14,
-    color: "#A5D6A7",
-    fontWeight: "500",
-    letterSpacing: 2,
+    fontSize: 18,
+    color: "#D4AF37",
+    fontWeight: "600",
+    letterSpacing: 3,
     textTransform: "uppercase",
-    marginTop: 4,
+    marginTop: 8,
   },
   greeting: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 12,
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    backgroundColor: "#1A4D1E",
-    borderRadius: 12,
-    marginBottom: 20,
+    gap: 16,
+    paddingVertical: 20,
+    paddingHorizontal: 20,
+    backgroundColor: "#1A1F2E",
+    borderRadius: 16,
+    marginBottom: 28,
+    borderWidth: 2,
+    borderColor: "#D4AF37",
   },
   avatar: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: "#4CAF50",
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: "#FFD700",
     justifyContent: "center",
     alignItems: "center",
   },
   avatarText: {
-    color: "#FFFFFF",
-    fontSize: 18,
-    fontWeight: "bold",
+    color: "#0F1419",
+    fontSize: 28,
+    fontWeight: "900",
   },
   greetingText: {
-    color: "#E8F5E9",
-    fontSize: 16,
-    fontWeight: "600",
+    color: "#FFFFFF",
+    fontSize: 20,
+    fontWeight: "700",
   },
   // Quick Play
   quickPlayButton: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 16,
+    gap: 20,
     backgroundColor: "#FFD700",
-    paddingVertical: 20,
-    paddingHorizontal: 20,
-    borderRadius: 18,
-    marginBottom: 24,
+    paddingVertical: 32,
+    paddingHorizontal: 24,
+    borderRadius: 20,
+    marginBottom: 32,
     shadowColor: "#FFD700",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 6,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.5,
+    shadowRadius: 16,
+    elevation: 10,
   },
   quickPlayIcon: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: "#FFFFFF30",
+    width: 72,
+    height: 72,
+    borderRadius: 36,
+    backgroundColor: "#FFFFFF40",
     justifyContent: "center",
     alignItems: "center",
   },
@@ -299,101 +301,103 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   quickPlayTitle: {
-    fontSize: 22,
-    fontWeight: "800",
-    color: "#0D3B0F",
+    fontSize: 28,
+    fontWeight: "900",
+    color: "#0F1419",
   },
   quickPlaySub: {
-    fontSize: 14,
-    color: "#1B5E20",
-    fontWeight: "500",
-    marginTop: 2,
+    fontSize: 16,
+    color: "#1A1F2E",
+    fontWeight: "600",
+    marginTop: 4,
   },
   // Multiplayer section
   multiplayerSection: {
-    marginBottom: 20,
+    marginBottom: 28,
   },
   sectionLabel: {
-    fontSize: 13,
-    color: "#81C784",
-    fontWeight: "700",
+    fontSize: 16,
+    color: "#D4AF37",
+    fontWeight: "800",
     textTransform: "uppercase",
-    letterSpacing: 1,
-    marginBottom: 10,
+    letterSpacing: 2,
+    marginBottom: 16,
   },
   actions: {
-    gap: 10,
+    gap: 14,
   },
   secondaryButton: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 14,
-    backgroundColor: "#1A4D1E",
-    paddingVertical: 16,
-    paddingHorizontal: 18,
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: "#2E7D32",
+    gap: 18,
+    backgroundColor: "#1A1F2E",
+    paddingVertical: 22,
+    paddingHorizontal: 20,
+    borderRadius: 16,
+    borderWidth: 2,
+    borderColor: "#D4AF37",
   },
   buttonTextContainer: {
     flex: 1,
   },
   secondaryButtonText: {
-    fontSize: 16,
-    fontWeight: "700",
+    fontSize: 20,
+    fontWeight: "800",
     color: "#FFD700",
   },
   secondaryButtonSub: {
-    fontSize: 12,
-    color: "#A5D6A7",
-    marginTop: 2,
+    fontSize: 15,
+    color: "#A0A0A0",
+    marginTop: 4,
   },
   // Info card
   infoCard: {
-    backgroundColor: "#1A4D1E",
+    backgroundColor: "#1A1F2E",
+    paddingVertical: 24,
+    paddingHorizontal: 20,
     borderRadius: 16,
-    padding: 20,
-    gap: 12,
-    borderWidth: 1,
-    borderColor: "#2E7D32",
-    marginBottom: 16,
+    borderLeftWidth: 4,
+    borderLeftColor: "#FFD700",
+    marginBottom: 24,
   },
   infoTitle: {
-    fontSize: 16,
-    fontWeight: "700",
+    fontSize: 22,
+    fontWeight: "800",
     color: "#FFD700",
-    marginBottom: 4,
+    marginBottom: 16,
   },
   infoRow: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 12,
+    gap: 16,
+    marginBottom: 14,
   },
   infoEmoji: {
-    fontSize: 20,
-    width: 28,
-    textAlign: "center",
+    fontSize: 28,
   },
   infoText: {
-    fontSize: 14,
-    color: "#E8F5E9",
     flex: 1,
-    lineHeight: 20,
+    fontSize: 16,
+    color: "#E0E0E0",
+    fontWeight: "500",
+    lineHeight: 24,
   },
+  // Login prompt
   loginPrompt: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    gap: 8,
-    paddingVertical: 14,
-    backgroundColor: "#1A4D1E",
-    borderRadius: 12,
-    borderWidth: 1,
+    gap: 12,
+    paddingVertical: 20,
+    paddingHorizontal: 24,
+    backgroundColor: "#1A1F2E",
+    borderRadius: 16,
+    borderWidth: 2,
     borderColor: "#FFD700",
   },
   loginPromptText: {
+    fontSize: 18,
+    fontWeight: "700",
     color: "#FFD700",
-    fontSize: 15,
-    fontWeight: "600",
   },
 });
