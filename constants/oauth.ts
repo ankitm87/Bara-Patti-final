@@ -1,6 +1,5 @@
 import * as Linking from "expo-linking";
 import * as ReactNative from "react-native";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 
 // Extract scheme from bundle ID (last segment timestamp, prefixed with "manus")
 // e.g., "space.manus.my.app.t20240115103045" -> "manus20240115103045"
@@ -67,15 +66,17 @@ const encodeState = (value: string) => {
 /**
  * Get the redirect URI for OAuth callback.
  * - Web: uses API server callback endpoint
- * - Native: uses mobile API endpoint (returns JSON instead of redirect)
+ * - Native: uses deep link scheme that the app can intercept
  */
 export const getRedirectUri = () => {
   if (ReactNative.Platform.OS === "web") {
     return `${getApiBaseUrl()}/api/oauth/callback`;
   } else {
-    // For native, use the mobile endpoint which returns JSON
-    // The OAuth server requires http/https/manus* schemes
-    return `${getApiBaseUrl()}/api/oauth/mobile`;
+    // For native, use deep link scheme
+    // The OAuth server will redirect to this scheme, which opens the app
+    return Linking.createURL("/oauth/callback", {
+      scheme: env.deepLinkScheme,
+    });
   }
 };
 
@@ -96,9 +97,10 @@ export const getLoginUrl = () => {
  * Start OAuth login flow.
  *
  * On web, redirects to the login URL.
- * On native (Expo Go), uses WebBrowser to open OAuth portal and handles the callback.
+ * On native (Expo Go), uses WebBrowser to open OAuth portal.
+ * The OAuth server redirects back to the app via deep link, handled by callback screen.
  *
- * @returns Session token if successful, null otherwise
+ * @returns Always null - callback is handled via deep link
  */
 export async function startOAuthLogin(): Promise<string | null> {
   const loginUrl = getLoginUrl();
@@ -112,32 +114,20 @@ export async function startOAuthLogin(): Promise<string | null> {
   }
 
   // On native, use WebBrowser to open OAuth portal
+  // The OAuth server will redirect back to the app via deep link
   try {
     const WebBrowser = await import("expo-web-browser");
-    const result = await WebBrowser.openAuthSessionAsync(loginUrl, getRedirectUri());
+    const redirectUri = getRedirectUri();
+    console.log("[OAuth] Opening OAuth portal with redirect URI:", redirectUri);
 
-    if (result.type === "success") {
-      const url = result.url;
-      // Extract code and state from the redirect URL
-      const urlObj = new URL(url);
-      const code = urlObj.searchParams.get("code");
-      const state = urlObj.searchParams.get("state");
+    const result = await WebBrowser.openAuthSessionAsync(loginUrl, redirectUri);
 
-      if (code && state) {
-        // Exchange code for token via mobile endpoint
-        const response = await fetch(
-          `${getApiBaseUrl()}/api/oauth/mobile?code=${code}&state=${state}`
-        );
-        const data = await response.json();
-
-        if (data.app_session_id) {
-          // Store session token
-          await AsyncStorage.setItem(SESSION_TOKEN_KEY, data.app_session_id);
-          await AsyncStorage.setItem(USER_INFO_KEY, JSON.stringify(data.user));
-          return data.app_session_id;
-        }
-      }
+    if (result.type === "cancel") {
+      console.log("[OAuth] Login cancelled by user");
+    } else if (result.type === "dismiss") {
+      console.log("[OAuth] Browser dismissed");
     }
+    // On success, the OAuth server redirects to the deep link, which opens the callback screen
   } catch (error) {
     console.error("[OAuth] Failed to open login URL:", error);
   }
