@@ -66,7 +66,7 @@ const encodeState = (value: string) => {
 /**
  * Get the redirect URI for OAuth callback.
  * - Web: uses API server callback endpoint
- * - Native: uses deep link scheme that the app can intercept
+ * - Native: uses manus* scheme that the OAuth server allows
  */
 export const getRedirectUri = () => {
   if (ReactNative.Platform.OS === "web") {
@@ -97,11 +97,14 @@ export const getLoginUrl = () => {
  *
  * On web, redirects to the login URL.
  * On native (Expo Go), uses WebBrowser to open OAuth portal.
- * The OAuth server redirects back to the app via deep link, handled by callback screen.
+ * After OAuth completes, manually navigates to callback screen with code/state.
  *
- * @returns Always null - callback is handled via deep link
+ * @param router - Expo Router instance for navigation
+ * @returns Always null - callback is handled via navigation
  */
-export async function startOAuthLogin(): Promise<string | null> {
+export async function startOAuthLogin(
+  router?: any
+): Promise<string | null> {
   const loginUrl = getLoginUrl();
 
   if (ReactNative.Platform.OS === "web") {
@@ -113,7 +116,7 @@ export async function startOAuthLogin(): Promise<string | null> {
   }
 
   // On native, use WebBrowser to open OAuth portal
-  // The OAuth server will redirect back to the app via deep link
+  // WebBrowser returns the redirect URL, then we manually navigate to callback
   try {
     const WebBrowser = await import("expo-web-browser");
     const redirectUri = getRedirectUri();
@@ -121,12 +124,45 @@ export async function startOAuthLogin(): Promise<string | null> {
 
     const result = await WebBrowser.openAuthSessionAsync(loginUrl, redirectUri);
 
-    if (result.type === "cancel") {
+    if (result.type === "success") {
+      const url = result.url;
+      console.log("[OAuth] OAuth callback URL:", url);
+
+      // Extract code and state from the redirect URL
+      try {
+        const urlObj = new URL(url);
+        const code = urlObj.searchParams.get("code");
+        const state = urlObj.searchParams.get("state");
+        const error = urlObj.searchParams.get("error");
+
+        console.log("[OAuth] Extracted:", {
+          code: code ? "present" : "missing",
+          state: state ? "present" : "missing",
+          error: error || "none",
+        });
+
+        if (router) {
+          // Navigate to callback screen with code and state as params
+          if (error) {
+            router.push({
+              pathname: "/oauth/callback",
+              params: { error },
+            });
+          } else if (code && state) {
+            router.push({
+              pathname: "/oauth/callback",
+              params: { code, state },
+            });
+          }
+        }
+      } catch (e) {
+        console.error("[OAuth] Failed to parse callback URL:", e);
+      }
+    } else if (result.type === "cancel") {
       console.log("[OAuth] Login cancelled by user");
     } else if (result.type === "dismiss") {
       console.log("[OAuth] Browser dismissed");
     }
-    // On success, the OAuth server redirects to the deep link, which opens the callback screen
   } catch (error) {
     console.error("[OAuth] Failed to open login URL:", error);
   }

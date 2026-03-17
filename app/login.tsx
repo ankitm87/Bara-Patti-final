@@ -9,7 +9,7 @@ export default function LoginScreen() {
   const router = useRouter();
 
   const handleLogin = async () => {
-    await startOAuthLogin();
+    await startOAuthLogin(router);
   };
 
   return (
