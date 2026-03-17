@@ -72,11 +72,10 @@ export const getRedirectUri = () => {
   if (ReactNative.Platform.OS === "web") {
     return `${getApiBaseUrl()}/api/oauth/callback`;
   } else {
-    // For native, use deep link scheme
-    // The OAuth server will redirect to this scheme, which opens the app
-    return Linking.createURL("/oauth/callback", {
-      scheme: env.deepLinkScheme,
-    });
+    // For native, use the manus* scheme directly
+    // The OAuth server only allows http, https, or manus* schemes
+    // Format: manus{timestamp}://oauth/callback
+    return `${env.deepLinkScheme}://oauth/callback`;
   }
 };
 
