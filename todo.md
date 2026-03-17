@@ -120,3 +120,18 @@
 
 - [x] Fix: Game still freezes after winning the first hand in bot play (cannot play second hand)
 - [x] Add auto-play for timed-out players in group games (computer assigns card based on logic)
+
+## V8 Real-Time Multiplayer (WebSocket)
+
+- [x] Install socket.io and socket.io-client
+- [x] Server-side Socket.IO setup with room management
+- [x] Server-side game state management (authoritative server)
+- [x] Room creation, joining, and player management via WebSocket
+- [x] Game state sync - dealing, card play, trick completion, round end
+- [x] Client-side Socket.IO hook for connecting and emitting events
+- [ ] Update game context to support multiplayer mode (server-driven state)
+- [ ] Update lobby screen for real-time player join/leave/ready
+- [ ] Update game screen to send/receive card plays via WebSocket
+- [ ] Auto-play for timed-out players on server side
+- [ ] Bot fill for empty seats on server side
+- [ ] Reconnection support for dropped connections
