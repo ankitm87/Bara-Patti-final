@@ -13,6 +13,7 @@ import { useGame } from "@/lib/game-context";
 import { Seat, PlayerState } from "@/lib/game-engine";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import * as Linking from "expo-linking";
+import { useSocket } from "@/hooks/use-socket";
 
 const SEAT_COLORS = ["#4CAF50", "#2196F3", "#FF9800", "#E91E63"];
 
@@ -23,6 +24,7 @@ export default function LobbyScreen() {
   const { state, dispatch } = useGame();
   const [isReady, setIsReady] = useState(false);
   const hasNavigated = useRef(false);
+  const socket = useSocket("http://localhost:3000");
 
   // Initialize room with current player
   useEffect(() => {
@@ -68,6 +70,11 @@ export default function LobbyScreen() {
       const newReady = !isReady;
       dispatch({ type: "SET_PLAYER_READY", seat: mySeat, isReady: newReady });
       setIsReady(newReady);
+      
+      // Emit ready status via WebSocket if connected
+      if (socket?.isConnected && roomId && mySeat !== undefined) {
+        socket.setReady(roomId, mySeat, newReady);
+      }
     }
   };
 

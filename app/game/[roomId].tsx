@@ -18,7 +18,7 @@ import { CountdownTimer } from "@/components/countdown-timer";
 import { PlayerPanel } from "@/components/player-panel";
 import { TrumpBanner } from "@/components/trump-banner";
 import { TrickScoreboard } from "@/components/trick-scoreboard";
-import { ActivityLog, LogEntry } from "@/components/activity-log";
+
 import { LegalMoveHint } from "@/components/legal-move-hint";
 import { ChatBubble } from "@/components/chat-bubble";
 import {
@@ -59,7 +59,7 @@ export default function GameScreen() {
   const [showRoundEnd, setShowRoundEnd] = useState(false);
   const [dealingCardIndex, setDealingCardIndex] = useState(0);
   const [showShuffling, setShowShuffling] = useState(false);
-  const [activityLog, setActivityLog] = useState<LogEntry[]>([]);
+
   const [trickWinnerSeat, setTrickWinnerSeat] = useState<Seat | null>(null);
   const logIdRef = useRef(0);
   const { muted, toggleMute, playShuffle, playCardPlay, playMyWin, playOtherWin } = useSound();
@@ -88,12 +88,9 @@ export default function GameScreen() {
   }, [isMyTurn, state.trumpSuit, myHand, state.currentTrick, isFirstTrick, isFirstCard]);
 
   // ─── Activity Log Helper ──────────────────────────────────────────────────
-  const addLog = useCallback((text: string, type: LogEntry["type"] = "play") => {
+  const addLog = useCallback((text: string) => {
     logIdRef.current++;
-    setActivityLog((prev) => [
-      { id: String(logIdRef.current), text, type, timestamp: Date.now() },
-      ...prev.slice(0, 49),
-    ]);
+    // Activity log removed
   }, []);
 
   // ─── Bot Auto-play & Timeout Auto-play ────────────────────────────────────
@@ -142,9 +139,9 @@ export default function GameScreen() {
   useEffect(() => {
     if (state.phase !== "dealing") return;
     setShowShuffling(true);
-    setActivityLog([]);
+    // Activity log cleared
     playShuffle();
-    addLog("Shuffling and dealing cards...", "system");
+    addLog("Shuffling and dealing cards...");
     const shuffleTimer = setTimeout(() => {
       setShowShuffling(false);
       let cardIdx = 0;
@@ -174,7 +171,7 @@ export default function GameScreen() {
         const botTrios = findTrios(p.hand);
         if (botTrios.length > 0) {
           dispatch({ type: "DECLARE_TRIO", seat: p.seat, trio: botTrios[0] });
-          addLog(`${p.name} declared Trio of ${botTrios[0].rank}s!`, "trio");
+          addLog(`${p.name} declared Trio of ${botTrios[0].rank}s!`);
         } else {
           dispatch({ type: "DECLINE_TRIO", seat: p.seat });
         }
@@ -187,7 +184,7 @@ export default function GameScreen() {
     } else {
       // No trio for human - auto-decline and advance after a short delay
       dispatch({ type: "DECLINE_TRIO", seat: mySeat });
-      addLog("No trios found. Starting play...", "system");
+      addLog("No trios found. Starting play...");
       const timer = setTimeout(() => {
         dispatch({ type: "FINISH_TRIO_CHECK" });
       }, 1500);
@@ -208,7 +205,7 @@ export default function GameScreen() {
       } else {
         playOtherWin();
       }
-      addLog(`${winner.seat === mySeat ? "You" : winner.name} won the hand!`, "trick_win");
+      addLog(`${winner.seat === mySeat ? "You" : winner.name} won the hand!`);
     }
 
     // After 1.5s, clear the trick and move on
@@ -249,7 +246,7 @@ export default function GameScreen() {
     const trios = findTrios(myHand);
     if (trios.length > 0) {
       dispatch({ type: "DECLARE_TRIO", seat: mySeat, trio: trios[0] });
-      addLog(`You declared Trio of ${trios[0].rank}s!`, "trio");
+      addLog(`You declared Trio of ${trios[0].rank}s!`);
     }
     setShowTrioModal(false);
   };
@@ -501,7 +498,7 @@ export default function GameScreen() {
             />
           </View>
           <View style={styles.sidebarRight}>
-            <ActivityLog entries={activityLog} />
+
           </View>
         </View>
 

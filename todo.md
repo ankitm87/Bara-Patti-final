@@ -147,3 +147,10 @@
 - [ ] Test multiplayer with 4 real players
 - [ ] Verify WebSocket connection in DevTools
 - [ ] Test reconnection scenarios
+
+## V12 Profile & UX Improvements
+
+- [x] Fix profile tab navigation - Leaderboard, Achievements, How to Play screens not loading
+- [x] Capture user name from email (extract before @)
+- [x] Remove activity log from game screen
+- [x] Integrate multiplayer into lobby screen with WebSocket support

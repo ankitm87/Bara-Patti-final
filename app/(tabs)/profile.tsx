@@ -84,19 +84,31 @@ export default function ProfileScreen() {
 
           {/* Menu Items */}
           <View style={styles.menu}>
-            <TouchableOpacity style={styles.menuItem} activeOpacity={0.7}>
+            <TouchableOpacity
+              style={styles.menuItem}
+              activeOpacity={0.7}
+              onPress={() => router.push("/achievements" as any)}
+            >
               <MaterialIcons name="emoji-events" size={22} color="#FFD700" />
               <Text style={styles.menuItemText}>Achievements</Text>
               <MaterialIcons name="chevron-right" size={22} color="#2E7D32" />
             </TouchableOpacity>
 
-            <TouchableOpacity style={styles.menuItem} activeOpacity={0.7}>
+            <TouchableOpacity
+              style={styles.menuItem}
+              activeOpacity={0.7}
+              onPress={() => router.push("/leaderboard" as any)}
+            >
               <MaterialIcons name="leaderboard" size={22} color="#FFD700" />
               <Text style={styles.menuItemText}>Leaderboard</Text>
               <MaterialIcons name="chevron-right" size={22} color="#2E7D32" />
             </TouchableOpacity>
 
-            <TouchableOpacity style={styles.menuItem} activeOpacity={0.7}>
+            <TouchableOpacity
+              style={styles.menuItem}
+              activeOpacity={0.7}
+              onPress={() => router.push("/how-to-play" as any)}
+            >
               <MaterialIcons name="help-outline" size={22} color="#A5D6A7" />
               <Text style={styles.menuItemText}>How to Play</Text>
               <MaterialIcons name="chevron-right" size={22} color="#2E7D32" />
