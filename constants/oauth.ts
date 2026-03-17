@@ -1,5 +1,6 @@
 import * as Linking from "expo-linking";
 import * as ReactNative from "react-native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 // Extract scheme from bundle ID (last segment timestamp, prefixed with "manus")
 // e.g., "space.manus.my.app.t20240115103045" -> "manus20240115103045"
@@ -66,15 +67,15 @@ const encodeState = (value: string) => {
 /**
  * Get the redirect URI for OAuth callback.
  * - Web: uses API server callback endpoint
- * - Native: uses deep link scheme
+ * - Native: uses mobile API endpoint (returns JSON instead of redirect)
  */
 export const getRedirectUri = () => {
   if (ReactNative.Platform.OS === "web") {
     return `${getApiBaseUrl()}/api/oauth/callback`;
   } else {
-    return Linking.createURL("/oauth/callback", {
-      scheme: env.deepLinkScheme,
-    });
+    // For native, use the mobile endpoint which returns JSON
+    // The OAuth server requires http/https/manus* schemes
+    return `${getApiBaseUrl()}/api/oauth/mobile`;
   }
 };
 
@@ -94,12 +95,10 @@ export const getLoginUrl = () => {
 /**
  * Start OAuth login flow.
  *
- * On native platforms (iOS/Android), open the system browser directly so
- * the OAuth callback returns via deep link to the app.
+ * On web, redirects to the login URL.
+ * On native (Expo Go), uses WebBrowser to open OAuth portal and handles the callback.
  *
- * On web, this simply redirects to the login URL.
- *
- * @returns Always null, the callback is handled via deep link.
+ * @returns Session token if successful, null otherwise
  */
 export async function startOAuthLogin(): Promise<string | null> {
   const loginUrl = getLoginUrl();
@@ -112,20 +111,36 @@ export async function startOAuthLogin(): Promise<string | null> {
     return null;
   }
 
-  const supported = await Linking.canOpenURL(loginUrl);
-  if (!supported) {
-    console.warn("[OAuth] Cannot open login URL: URL scheme not supported");
-    // 可考虑抛出错误或返回错误状态，让调用方处理
-    return null;
-  }
-
+  // On native, use WebBrowser to open OAuth portal
   try {
-    await Linking.openURL(loginUrl);
+    const WebBrowser = await import("expo-web-browser");
+    const result = await WebBrowser.openAuthSessionAsync(loginUrl, getRedirectUri());
+
+    if (result.type === "success") {
+      const url = result.url;
+      // Extract code and state from the redirect URL
+      const urlObj = new URL(url);
+      const code = urlObj.searchParams.get("code");
+      const state = urlObj.searchParams.get("state");
+
+      if (code && state) {
+        // Exchange code for token via mobile endpoint
+        const response = await fetch(
+          `${getApiBaseUrl()}/api/oauth/mobile?code=${code}&state=${state}`
+        );
+        const data = await response.json();
+
+        if (data.app_session_id) {
+          // Store session token
+          await AsyncStorage.setItem(SESSION_TOKEN_KEY, data.app_session_id);
+          await AsyncStorage.setItem(USER_INFO_KEY, JSON.stringify(data.user));
+          return data.app_session_id;
+        }
+      }
+    }
   } catch (error) {
     console.error("[OAuth] Failed to open login URL:", error);
-    // 可考虑抛出错误让调用方处理
   }
 
-  // The OAuth callback will reopen the app via deep link.
   return null;
 }

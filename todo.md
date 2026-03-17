@@ -135,3 +135,15 @@
 - [ ] Auto-play for timed-out players on server side
 - [ ] Bot fill for empty seats on server side
 - [ ] Reconnection support for dropped connections
+
+## V9 OAuth & Multiplayer Testing Setup
+
+- [x] Fix OAuth redirect URI for Expo Go (use mobile endpoint instead of deep link)
+- [x] Update OAuth flow to use WebBrowser.openAuthSessionAsync for native
+- [x] Create MULTIPLAYER_TESTING.md guide for testing with friends
+- [ ] Test OAuth login flow in Expo Go
+- [ ] Set up ngrok tunnel for external testing
+- [ ] Test multiplayer with 2 real players
+- [ ] Test multiplayer with 4 real players
+- [ ] Verify WebSocket connection in DevTools
+- [ ] Test reconnection scenarios
