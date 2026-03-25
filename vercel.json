@@ -1,16 +1,4 @@
 {
   "buildCommand": "",
-  "outputDirectory": "dist",
-  "cleanUrls": true,
-  "trailingSlash": false,
-  "routes": [
-    {
-      "src": "^/(?!_expo|_next|assets|favicon).*",
-      "dest": "/index.html"
-    },
-    {
-      "src": "/(.*)",
-      "dest": "/$1"
-    }
-  ]
+  "outputDirectory": "dist"
 }
