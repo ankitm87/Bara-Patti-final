@@ -1,8 +1,7 @@
 {
-  "buildCommand": "pnpm install && npx expo export --platform web",
+  "buildCommand": "npx expo export --platform web",
   "outputDirectory": "dist",
   "env": {
     "EXPO_USE_METRO_WORKSPACE_ROOT": "1"
-  },
-  "installCommand": "pnpm install"
+  }
 }
