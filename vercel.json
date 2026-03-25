@@ -1,10 +1,16 @@
 {
   "buildCommand": "",
   "outputDirectory": "dist",
-  "rewrites": [
+  "cleanUrls": true,
+  "trailingSlash": false,
+  "routes": [
     {
-      "source": "/(.*)",
-      "destination": "/index.html"
+      "src": "^/(?!_expo|_next|assets|favicon).*",
+      "dest": "/index.html"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/$1"
     }
   ]
 }
