@@ -14,6 +14,7 @@ import { ScreenContainer } from "@/components/screen-container";
 import { useAuth } from "@/hooks/use-auth";
 import { useGame } from "@/lib/game-context";
 import { PlayingCard } from "@/components/playing-card";
+import { AnimatedPlayingCard } from "@/components/animated-card";
 import { CountdownTimer } from "@/components/countdown-timer";
 import { PlayerPanel } from "@/components/player-panel";
 import { TrumpBanner } from "@/components/trump-banner";
@@ -44,6 +45,7 @@ import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { useSound } from "@/hooks/use-sound";
 import { trpc } from "@/lib/trpc";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("window");
 const CARD_WIDTH_MY = 58;
@@ -119,9 +121,7 @@ export default function GameScreen() {
       if (validForPlayer.length > 0) {
         // Play lowest legal card (smart auto-play)
         const sorted = [...validForPlayer].sort((a, b) => RANK_ORDER[a.rank] - RANK_ORDER[b.rank]);
-        const card = isBot
-          ? validForPlayer[Math.floor(Math.random() * validForPlayer.length)]
-          : sorted[0];
+        const card = sorted[0];  // Both bots and timeout auto-play use lowest card
         addLog(
           isBot
             ? `${currentPlayer.name} played ${getCardDisplay(card)}`
@@ -223,22 +223,21 @@ export default function GameScreen() {
   }, [state.phase]);
 
   // ─── Handlers ─────────────────────────────────────────────────────────────
-  const handlePlayCard = (card: Card) => {
+  const handlePlayCard = useCallback((card: Card) => {
     if (!isMyTurn) return;
     if (!validCards.some((c) => c.id === card.id)) return;
     addLog(`You played ${getCardDisplay(card)}`);
     playCardPlay();
     dispatch({ type: "PLAY_CARD", seat: mySeat, card });
+  }, [isMyTurn, validCards, mySeat]);
 
-  };
-
-  const handleAutoPlay = () => {
+  const handleAutoPlay = useCallback(() => {
     if (validCards.length > 0) {
       // Play lowest legal card
       const sorted = [...validCards].sort((a, b) => RANK_ORDER[a.rank] - RANK_ORDER[b.rank]);
       handlePlayCard(sorted[0]);
     }
-  };
+  }, [validCards, handlePlayCard]);
 
   const handleTrumpRevealDone = () => dispatch({ type: "FINISH_TRUMP_REVEAL" });
 
@@ -375,9 +374,10 @@ export default function GameScreen() {
   return (
     <ScreenContainer edges={["top", "left", "right"]}>
       <View style={styles.gameRoot}>
+
         {/* Mute Toggle */}
         <TouchableOpacity
-          style={styles.muteBtn}
+          style={[styles.muteBtn, { right: 8, bottom: 8, top: "auto" }]}
           onPress={toggleMute}
           activeOpacity={0.7}
         >
@@ -416,6 +416,19 @@ export default function GameScreen() {
             </Text>
           </View>
         )}
+
+        {/* Back Button - positioned below trio info, in line with top player */}
+        <TouchableOpacity
+          style={[styles.muteBtn, { left: 8, right: "auto", top: 125, bottom: "auto" }]}
+          onPress={() => router.back()}
+          activeOpacity={0.7}
+        >
+          <MaterialIcons
+            name="arrow-back"
+            size={24}
+            color="#FFD700"
+          />
+        </TouchableOpacity>
 
         {/* Table Area */}
         <View style={styles.tableArea}>
@@ -464,7 +477,12 @@ export default function GameScreen() {
                   return (
                     <View key={seat} style={[styles.trickSlot, style]}>
                       {played ? (
-                        <PlayingCard card={played.card} size="medium" winning={isWinner} />
+                        <AnimatedPlayingCard
+                          card={played.card}
+                          size="medium"
+                          winning={isWinner}
+                          animationType={isWinner ? "win" : "play"}
+                        />
                       ) : (
                         <View style={styles.trickPlaceholder} />
                       )}
@@ -506,24 +524,24 @@ export default function GameScreen() {
         <View style={styles.myArea}>
           {/* My info bar + timer */}
           <View style={styles.myInfoBar}>
-            <View style={styles.myInfoLeft}>
-              <View style={[styles.myAvatar, isMyTurn && styles.myAvatarActive]}>
-                <Text style={styles.myAvatarText}>
-                  {myPlayer?.odInitials || "Y"}
-                </Text>
-                {state.dealerSeat === mySeat && (
-                  <View style={styles.myDealerBadge}>
-                    <Text style={styles.myDealerText}>D</Text>
-                  </View>
-                )}
+              <View style={styles.myInfoLeft}>
+                <View style={[styles.myAvatar, isMyTurn && styles.myAvatarActive]}>
+                  <Text style={styles.myAvatarText}>
+                    {myPlayer?.name?.charAt(0).toUpperCase() || "Y"}
+                  </Text>
+                  {state.dealerSeat === mySeat && (
+                    <View style={styles.myDealerBadge}>
+                      <Text style={styles.myDealerText}>D</Text>
+                    </View>
+                  )}
+                </View>
+                <View style={{ flex: 1, alignItems: "center" }}>
+                  <Text style={[styles.myName, isMyTurn && { color: "#FFD700" }, { textAlign: "center" }]}>
+                    {isMyTurn ? "Your Turn" : myPlayer?.name?.split("@")[0] || "You"}
+                  </Text>
+                  <Text style={styles.myTricks}>Hands: {myPlayer?.handsWon || 0}</Text>
+                </View>
               </View>
-              <View>
-                <Text style={[styles.myName, isMyTurn && { color: "#FFD700" }]}>
-                  {isMyTurn ? "Your Turn" : "You"}
-                </Text>
-                <Text style={styles.myTricks}>Hands: {myPlayer?.handsWon || 0}</Text>
-              </View>
-            </View>
             {isMyTurn && (
               <CountdownTimer
                 seconds={TURN_TIME_SECONDS}
@@ -571,10 +589,12 @@ export default function GameScreen() {
                   activeOpacity={canTap ? 0.85 : 1}
                   disabled={!canTap}
                 >
-                  <PlayingCard
+                  <AnimatedPlayingCard
                     card={card}
                     size="large"
                     dimmed={isMyTurn && !isValid}
+                    animationType="none"
+                    delay={0}
                   />
                 </TouchableOpacity>
               );
@@ -798,10 +818,12 @@ const styles = StyleSheet.create({
   // ─── Main Game ──────────────────────────────────────────────────────────
   gameRoot: {
     flex: 1,
+    paddingTop: Platform.OS === "web" ? 12 : 20,
   },
   trickCompleteBanner: {
     backgroundColor: "#FFD70020",
-    paddingVertical: 6,
+    paddingTop: Platform.OS === "web" ? 4 : 8,
+    paddingBottom: 6,
     paddingHorizontal: 16,
     borderBottomWidth: 1,
     borderBottomColor: "#FFD70040",
@@ -847,6 +869,7 @@ const styles = StyleSheet.create({
   topPlayer: {
     alignItems: "center",
     paddingTop: 6,
+    paddingHorizontal: 8,
   },
   middleRow: {
     flex: 1,
@@ -854,9 +877,10 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   sidePlayer: {
-    width: 80,
+    width: 100,
     alignItems: "center",
     justifyContent: "center",
+    paddingHorizontal: 4,
   },
   centerArea: {
     flex: 1,
@@ -915,19 +939,24 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: "#2E7D3240",
     backgroundColor: "#0A2E0C",
-    paddingBottom: Platform.OS === "web" ? 8 : 4,
+    paddingBottom: Platform.OS === "web" ? 12 : 10,
+    paddingTop: 4,
   },
   myInfoBar: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: 14,
+    justifyContent: "center",
+    paddingHorizontal: 8,
     paddingVertical: 8,
+    marginHorizontal: 0,
+    gap: 12,
   },
   myInfoLeft: {
     flexDirection: "row",
     alignItems: "center",
     gap: 10,
+    flex: 1,
+    justifyContent: "center",
   },
   myAvatar: {
     width: 36,
@@ -971,6 +1000,8 @@ const styles = StyleSheet.create({
     color: "#E8F5E9",
     fontSize: 18,
     fontWeight: "700",
+    marginHorizontal: 4,
+    maxWidth: "80%",
   },
   myTricks: {
     color: "#81C784",

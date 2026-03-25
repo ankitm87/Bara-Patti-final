@@ -31,8 +31,9 @@ export function PlayerPanel({
 
   const cardCount = player.hand.length;
   const isMe = player.seat === mySeat;
-  const displayName = isMe ? "You" : player.name;
-  const initials = player.odInitials || player.name[0]?.toUpperCase() || "?";
+  const playerNameDisplay = player.name?.split("@")[0] || "Player";
+  const displayName = isMe ? "You" : playerNameDisplay;
+  const initials = player.name?.charAt(0).toUpperCase() || "?";
   const seatColor = SEAT_COLORS[player.seat];
 
   const isHorizontal = position === "top" || position === "bottom";
@@ -133,19 +134,19 @@ const styles = StyleSheet.create({
   infoSection: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 6,
+    gap: 8,
     backgroundColor: "#0D3B0FCC",
-    borderRadius: 10,
-    paddingVertical: 5,
-    paddingHorizontal: 8,
+    borderRadius: 12,
+    paddingVertical: 8,
+    paddingHorizontal: 10,
   },
   avatarWrapper: {
     position: "relative",
   },
   avatar: {
-    width: 30,
-    height: 30,
-    borderRadius: 15,
+    width: 45,
+    height: 45,
+    borderRadius: 22.5,
     justifyContent: "center",
     alignItems: "center",
   },
@@ -169,7 +170,7 @@ const styles = StyleSheet.create({
   },
   avatarText: {
     color: "#FFFFFF",
-    fontSize: 12,
+    fontSize: 18,
     fontWeight: "800",
   },
   dealerBadge: {
@@ -201,11 +202,11 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   nameSection: {
-    maxWidth: 70,
+    maxWidth: 100,
   },
   name: {
     color: "#E8F5E9",
-    fontSize: 11,
+    fontSize: 15,
     fontWeight: "700",
   },
   tricksRow: {
@@ -215,11 +216,11 @@ const styles = StyleSheet.create({
   },
   tricksLabel: {
     color: "#81C784",
-    fontSize: 9,
+    fontSize: 11,
     fontWeight: "500",
   },
   tricksValue: {
-    fontSize: 11,
+    fontSize: 14,
     fontWeight: "800",
   },
   cardFan: {

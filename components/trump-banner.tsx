@@ -52,16 +52,16 @@ const styles = StyleSheet.create({
   },
   trumpLabel: {
     color: "#FFD700",
-    fontSize: 10,
+    fontSize: 13,
     fontWeight: "900",
     letterSpacing: 1.5,
   },
   trumpSuit: {
-    fontSize: 20,
+    fontSize: 32,
     fontWeight: "bold",
   },
   trumpName: {
-    fontSize: 13,
+    fontSize: 16,
     fontWeight: "700",
   },
   trickSection: {
@@ -77,12 +77,12 @@ const styles = StyleSheet.create({
   },
   trickLabel: {
     color: "#81C784",
-    fontSize: 10,
+    fontSize: 12,
     fontWeight: "600",
   },
   trickNumber: {
     color: "#E8F5E9",
-    fontSize: 13,
+    fontSize: 16,
     fontWeight: "800",
     fontVariant: ["tabular-nums"],
   },

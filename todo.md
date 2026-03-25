@@ -182,3 +182,76 @@
 - [x] Enlarge game play screen fonts and layout for better readability
 - [x] Increase player names, card info, and turn timer sizes on game screen
 - [x] Optimize spacing on game screen to use available space
+
+## V16 Bug Fixes & UI Enhancements
+
+- [x] Fix CountdownTimer dispatch error - setState during render
+- [x] Add back button to game screen
+- [x] Enlarge trump display (suit symbol bigger)
+- [x] Improve player layout - increase spacing and visibility
+- [ ] Add smooth card dealing animations
+- [ ] Add smooth card playing animations
+- [ ] Add trick-winning animations
+
+
+## V17 Card Animations
+
+- [x] Create AnimatedPlayingCard component with reanimated
+- [x] Add deal animation (scale up, fade in, rotate, slide down)
+- [x] Add play animation (scale down, fade, slide to center)
+- [x] Add win animation (scale up, glow effect)
+- [x] Integrate animations into my hand cards rendering
+- [x] Integrate animations into trick area cards rendering
+- [ ] Test animations on device for smoothness
+- [ ] Fine-tune animation timings and easing
+
+
+## V18 UI Layout Fixes
+
+- [x] Fix overlapping back button and trump display
+- [x] Fix overlapping volume icon and hand cards
+- [x] Center-align "Your turn" text
+- [x] Display full player names instead of email
+- [x] Show full player names in avatars (not just initials)
+- [x] Fix hands won display - ensure Maasi's count is visible
+- [x] Ensure all player info is fully visible on screen
+
+
+## V19 Final UI Fixes & Player Name Capture
+
+- [x] Add player name capture screen after OAuth login
+- [x] Move back button to top-left corner
+- [x] Fix Maasi player panel cutoff on right side
+- [x] Fix timer visibility - ensure "Your Turn" timer is fully visible
+- [x] Remove animation after card play (no reshuffling animation)
+- [x] Use different sounds for card plays and wins
+- [x] Store player name in user profile
+- [x] Display player name throughout the app
+
+
+## V20 Button & Timer Positioning Fixes
+
+- [x] Move back button below trio info, in line with Chachu player
+- [x] Fix timer cutoff on mobile - ensure "Your Turn" timer is fully visible on Expo Go
+
+
+## V21 Final UI Polish
+
+- [x] Move back button closer to trio info (reduce gap)
+- [x] Disable card animation after card play
+- [x] Fix timer visibility - ensure circle and text are fully visible
+- [x] Fix alignment of "Your Turn", "Hands", and legal move hint
+
+## V22 Top Content Cutoff Fix
+
+- [x] Add top padding to gameRoot to prevent trump banner and hand count from being cut off by status bar
+- [x] Increase top padding further to accommodate trick complete banner and status bar
+- [x] Add top padding to trick complete banner
+- [x] Test in Expo Go to verify all content is visible
+
+## V23 Bot Card Selection Logic
+
+- [x] Fix: Bot plays high cards when it should play low (when can't win)
+- [x] Bots were playing RANDOM cards instead of lowest card
+- [x] Changed bot auto-play to use lowest card strategy (same as human timeout)
+- [x] All 93 tests pass
