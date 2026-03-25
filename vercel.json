@@ -1,7 +1,8 @@
 {
-  "buildCommand": "npx expo export --platform web",
+  "buildCommand": "bash build-vercel.sh",
   "outputDirectory": "dist",
   "env": {
-    "EXPO_USE_METRO_WORKSPACE_ROOT": "1"
+    "EXPO_USE_METRO_WORKSPACE_ROOT": "1",
+    "NODE_OPTIONS": "--max-old-space-size=4096"
   }
 }
