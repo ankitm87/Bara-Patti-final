@@ -255,3 +255,11 @@
 - [x] Bots were playing RANDOM cards instead of lowest card
 - [x] Changed bot auto-play to use lowest card strategy (same as human timeout)
 - [x] All 93 tests pass
+
+## V24 Web App Player Features
+
+- [x] Capture player name on web app when joining game
+- [x] Prompt user to input their display name
+- [x] Fix player positioning - joining player should always be in center (seat 0)
+- [ ] Fix game sync issue - game doesn't continue on second phone when 2 real + 2 bots
+- [ ] Test with 2 real players and 2 bots on different devices

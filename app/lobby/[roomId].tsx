@@ -14,6 +14,7 @@ import { Seat, PlayerState } from "@/lib/game-engine";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import * as Linking from "expo-linking";
 import { useSocket } from "@/hooks/use-socket";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const SEAT_COLORS = ["#4CAF50", "#2196F3", "#FF9800", "#E91E63"];
 
@@ -40,24 +41,29 @@ export default function LobbyScreen() {
       (p) => p.userId === (user?.openId || "local-player")
     );
     if (!alreadyIn && state.players.length < 4) {
-      const seat = state.players.length as Seat;
-      dispatch({
-        type: "ADD_PLAYER",
-        player: {
-          seat,
-          name: user?.name || user?.email?.split("@")[0] || "Player 1",
-          odId: user?.openId || "local-player",
-          odName: user?.name || "",
-          odEmail: user?.email || "",
-          odAvatar: "",
-          odInitials: (user?.name || user?.email || "P")[0].toUpperCase(),
-          odColor: SEAT_COLORS[seat],
-          userId: user?.openId || "local-player",
-          hand: [],
-          handsWon: 0,
-          isReady: false,
-          hasDeclinedTrio: false,
-        },
+      // Load player name from AsyncStorage (for web app users)
+      AsyncStorage.getItem("playerName").then((savedName) => {
+        // Always place joining player in center (seat 0)
+        const seat = 0 as Seat;
+        const playerName = savedName || user?.name || user?.email?.split("@")[0] || "Player";
+        dispatch({
+          type: "ADD_PLAYER",
+          player: {
+            seat,
+            name: playerName,
+            odId: user?.openId || "local-player",
+            odName: user?.name || "",
+            odEmail: user?.email || "",
+            odAvatar: "",
+            odInitials: playerName[0].toUpperCase(),
+            odColor: SEAT_COLORS[seat],
+            userId: user?.openId || "local-player",
+            hand: [],
+            handsWon: 0,
+            isReady: false,
+            hasDeclinedTrio: false,
+          },
+        });
       });
     }
   }, [roomId, user]);

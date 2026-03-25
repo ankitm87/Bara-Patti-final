@@ -9,13 +9,18 @@ import {
 } from "react-native";
 import { useRouter } from "expo-router";
 import { ScreenContainer } from "@/components/screen-container";
+import { PlayerNameModal } from "@/components/player-name-modal";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 export default function JoinRoomScreen() {
   const router = useRouter();
   const [code, setCode] = useState("");
   const [error, setError] = useState("");
+  const [showNameModal, setShowNameModal] = useState(false);
+  const [playerName, setPlayerName] = useState<string | null>(null);
   const inputRef = useRef<TextInput>(null);
+  const pendingCodeRef = useRef<string>("");
 
   const handleCodeChange = (text: string) => {
     const cleaned = text.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 6);
@@ -28,12 +33,24 @@ export default function JoinRoomScreen() {
       setError("Please enter a 6-character code");
       return;
     }
+    // Store code and show name modal
+    pendingCodeRef.current = code;
+    setShowNameModal(true);
+  };
+
+  const handleNameSubmit = async (name: string) => {
+    // Store player name in AsyncStorage
+    await AsyncStorage.setItem("playerName", name);
+    setPlayerName(name);
+    setShowNameModal(false);
     // Navigate to lobby with the code
-    router.replace(`/lobby/${code}` as any);
+    router.replace(`/lobby/${pendingCodeRef.current}` as any);
   };
 
   return (
-    <ScreenContainer edges={["top", "bottom", "left", "right"]}>
+    <>
+      <PlayerNameModal visible={showNameModal} onSubmit={handleNameSubmit} />
+      <ScreenContainer edges={["top", "bottom", "left", "right"]}>
       <View style={styles.container}>
         {/* Header */}
         <View style={styles.header}>
@@ -103,6 +120,7 @@ export default function JoinRoomScreen() {
         </View>
       </View>
     </ScreenContainer>
+    </>
   );
 }
 
