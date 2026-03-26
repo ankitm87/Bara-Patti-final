@@ -105,6 +105,28 @@ export function useSocket(serverUrl: string) {
     };
   }, []);
 
+  const sendChatMessage = useCallback(
+    (roomId: string, seatNumber: number, message: string) => {
+      socketRef.current?.emit("chat-message", {
+        roomId,
+        seatNumber,
+        message,
+        timestamp: Date.now(),
+      });
+    },
+    []
+  );
+
+  const onChatMessage = useCallback(
+    (callback: (message: any) => void) => {
+      socketRef.current?.on("chat-message", callback);
+      return () => {
+        socketRef.current?.off("chat-message", callback);
+      };
+    },
+    []
+  );
+
   return {
     socket: socketRef.current,
     isConnected: isConnectedRef.current,
@@ -117,5 +139,7 @@ export function useSocket(serverUrl: string) {
     declareTrio,
     onRoomState,
     onGameState,
+    sendChatMessage,
+    onChatMessage,
   };
 }

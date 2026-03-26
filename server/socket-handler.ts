@@ -172,6 +172,23 @@ export function initializeSocketIO(httpServer: HTTPServer) {
       io.to(data.roomId).emit("game-state", room.gameState);
     });
 
+    socket.on("chat-message", (data: { roomId: string; seatNumber: number; message: string; timestamp: number }) => {
+      const room = gameRooms.get(data.roomId);
+      if (!room) return;
+
+      const player = room.gameState.players.find((p) => p.seat === data.seatNumber);
+      if (!player) return;
+
+      // Broadcast chat message to all players in the room
+      io.to(data.roomId).emit("chat-message", {
+        id: `${socket.id}-${data.timestamp}`,
+        sender: player.name,
+        text: data.message,
+        timestamp: data.timestamp,
+        seatNumber: data.seatNumber,
+      });
+    });
+
     socket.on("disconnect", () => {
       console.log(`[socket] Player disconnected: ${socket.id}`);
 

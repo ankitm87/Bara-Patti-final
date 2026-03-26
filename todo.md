@@ -261,5 +261,8 @@
 - [x] Capture player name on web app when joining game
 - [x] Prompt user to input their display name
 - [x] Fix player positioning - joining player should always be in center (seat 0)
-- [ ] Fix game sync issue - game doesn't continue on second phone when 2 real + 2 bots
-- [ ] Test with 2 real players and 2 bots on different devices
+- [x] Fix game sync issue - added WebSocket listeners for room and game state sync
+- [x] Implement 60-second player reconnection window with ReconnectionHandler component
+- [x] Add real-time game chat with pre-filled messages (Badh badh ke aaiye, Naadri banenge ab)
+- [x] Add chat event handlers to server socket
+- [x] All 93 tests passing

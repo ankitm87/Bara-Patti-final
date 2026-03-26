@@ -18,6 +18,12 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const SEAT_COLORS = ["#4CAF50", "#2196F3", "#FF9800", "#E91E63"];
 
+interface PlayerSlotProps {
+  player?: PlayerState;
+  label: string;
+  color: string;
+}
+
 export default function LobbyScreen() {
   const router = useRouter();
   const { roomId } = useLocalSearchParams<{ roomId: string }>();
@@ -27,46 +33,94 @@ export default function LobbyScreen() {
   const hasNavigated = useRef(false);
   const socket = useSocket("http://localhost:3000");
 
-  // Initialize room with current player
+  // Initialize room with current player and sync with server
   useEffect(() => {
-    if (!roomId) return;
+    if (!roomId || !user) return;
 
     // If room not created yet, create it
     if (state.roomId !== roomId) {
       dispatch({ type: "CREATE_ROOM", roomId });
     }
 
-    // Add current player if not already in
-    const alreadyIn = state.players.find(
-      (p) => p.userId === (user?.openId || "local-player")
-    );
-    if (!alreadyIn && state.players.length < 4) {
-      // Load player name from AsyncStorage (for web app users)
-      AsyncStorage.getItem("playerName").then((savedName) => {
-        // Always place joining player in center (seat 0)
-        const seat = 0 as Seat;
-        const playerName = savedName || user?.name || user?.email?.split("@")[0] || "Player";
-        dispatch({
-          type: "ADD_PLAYER",
-          player: {
-            seat,
-            name: playerName,
-            odId: user?.openId || "local-player",
-            odName: user?.name || "",
-            odEmail: user?.email || "",
-            odAvatar: "",
-            odInitials: playerName[0].toUpperCase(),
-            odColor: SEAT_COLORS[seat],
-            userId: user?.openId || "local-player",
-            hand: [],
-            handsWon: 0,
-            isReady: false,
-            hasDeclinedTrio: false,
-          },
+    // Load player name from AsyncStorage (for web app users)
+    AsyncStorage.getItem("playerName").then((savedName) => {
+      const playerName = savedName || user?.name || user?.email?.split("@")[0] || "Player";
+      const playerData = {
+        name: playerName,
+        odId: user?.openId || "local-player",
+        odName: user?.name || "",
+        odEmail: user?.email || "",
+        odAvatar: "",
+        odInitials: playerName[0].toUpperCase(),
+        userId: user?.openId || "local-player",
+        hand: [],
+        handsWon: 0,
+        isReady: false,
+        hasDeclinedTrio: false,
+      };
+
+      // Check if this is the first player (room creator) or joining player
+      const isFirstPlayer = state.players.length === 0;
+      if (isFirstPlayer) {
+        // First player creates room on server
+        socket.createRoom(roomId, { name: playerName, avatar: "" }).then((result) => {
+          if (result.success) {
+            dispatch({
+              type: "ADD_PLAYER",
+              player: { ...playerData, seat: 0 as Seat, odColor: SEAT_COLORS[0] },
+            });
+          }
         });
-      });
-    }
+      } else {
+        // Other players join room on server
+        const alreadyIn = state.players.find(
+          (p) => p.userId === (user?.openId || "local-player")
+        );
+        if (!alreadyIn && state.players.length < 4) {
+          socket.joinRoom(roomId, { name: playerName, avatar: "" }).then((result) => {
+            if (result.success && result.seat !== undefined) {
+              dispatch({
+                type: "ADD_PLAYER",
+                player: { ...playerData, seat: result.seat, odColor: SEAT_COLORS[result.seat] },
+              });
+            }
+          });
+        }
+      }
+    });
   }, [roomId, user]);
+
+  // Listen for room state updates from server
+  useEffect(() => {
+    if (!roomId) return;
+    return socket.onRoomState((serverState) => {
+      // Sync server state to local state
+      dispatch({ type: "CREATE_ROOM", roomId });
+      serverState.players.forEach((player) => {
+        const alreadyIn = state.players.find((p) => p.userId === player.userId);
+        if (!alreadyIn) {
+          dispatch({ type: "ADD_PLAYER", player });
+        }
+      });
+    });
+  }, [roomId]);
+
+  // Listen for game state updates from server
+  useEffect(() => {
+    if (!roomId) return;
+    return socket.onGameState((serverState) => {
+      // When game starts on server, navigate to game screen
+      if (serverState.phase === "dealing" || serverState.phase === "trump_reveal") {
+        if (hasNavigated.current) return;
+        hasNavigated.current = true;
+        dispatch({ type: "START_DEALING" });
+        setTimeout(() => {
+          router.replace(`/game/${roomId}` as any);
+        }, 150);
+      }
+    });
+  }, [roomId]);
+
 
   const handleReady = () => {
     const mySeat = state.players.find(
