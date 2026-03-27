@@ -122,10 +122,12 @@ export default function LobbyScreen() {
   }, [roomId]);
 
 
+  const mySeat = state.players.find(
+    (p) => p.userId === (user?.openId || "local-player")
+  )?.seat;
+  const isRoomCreator = mySeat === 0;
+
   const handleReady = () => {
-    const mySeat = state.players.find(
-      (p) => p.userId === (user?.openId || "local-player")
-    )?.seat;
     if (mySeat !== undefined) {
       const newReady = !isReady;
       dispatch({ type: "SET_PLAYER_READY", seat: mySeat, isReady: newReady });
@@ -199,10 +201,11 @@ export default function LobbyScreen() {
     Linking.openURL(whatsappUrl);
   };
 
-  // Manual start button as fallback — marks all as ready and starts
+  // Manual start button as fallback — only room creator (seat 0) can start
   const handleStartGame = () => {
     if (hasNavigated.current) return;
     if (playerCount < 4) return;
+    if (!isRoomCreator) return; // Only room creator can start
 
     // Mark all players as ready
     state.players.forEach((p) => {
@@ -329,8 +332,8 @@ export default function LobbyScreen() {
             </View>
           )}
 
-          {/* Start Game button — visible when 4 players, user is ready, but not all ready yet */}
-          {playerCount === 4 && isReady && !allReady && (
+          {/* Start Game button — visible only to room creator when 4 players and user is ready */}
+          {playerCount === 4 && isReady && !allReady && isRoomCreator && (
             <TouchableOpacity
               style={styles.startButton}
               onPress={handleStartGame}
@@ -339,6 +342,14 @@ export default function LobbyScreen() {
               <MaterialIcons name="play-arrow" size={22} color="#0D3B0F" />
               <Text style={styles.startButtonText}>Start Game</Text>
             </TouchableOpacity>
+          )}
+
+          {/* Message for non-creators waiting for room creator to start */}
+          {playerCount === 4 && isReady && !allReady && !isRoomCreator && (
+            <View style={styles.waitingRow}>
+              <MaterialIcons name="hourglass-empty" size={18} color="#FFD700" />
+              <Text style={styles.waitingText}>Waiting for room creator to start...</Text>
+            </View>
           )}
 
           {/* When all are ready and navigating */}

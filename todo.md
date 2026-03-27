@@ -277,3 +277,10 @@
 - [x] Add voice note UI with record/play buttons
 - [x] Test voice notes on mobile and web
 - [x] All 93 tests passing
+
+## V26 Critical Fixes
+
+- [x] Fix Skip button alignment in trio modal (equal width, centered)
+- [x] Implement admin-only game start (only seat 0/room creator can start)
+- [x] Add waiting message for non-creators in lobby
+- [x] All 93 tests passing

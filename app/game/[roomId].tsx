@@ -790,10 +790,11 @@ const styles = StyleSheet.create({
   goldButton: {
     backgroundColor: "#FFD700",
     paddingVertical: 13,
-    paddingHorizontal: 40,
+    paddingHorizontal: 24,
     borderRadius: 12,
     alignItems: "center",
-    minWidth: 140,
+    justifyContent: "center",
+    flex: 1,
   },
   goldButtonText: {
     fontSize: 18,
@@ -803,12 +804,13 @@ const styles = StyleSheet.create({
   outlineButton: {
     backgroundColor: "transparent",
     paddingVertical: 13,
-    paddingHorizontal: 40,
+    paddingHorizontal: 24,
     borderRadius: 12,
     alignItems: "center",
+    justifyContent: "center",
     borderWidth: 1.5,
     borderColor: "#2E7D32",
-    minWidth: 140,
+    flex: 1,
   },
   outlineButtonText: {
     fontSize: 18,
@@ -1050,6 +1052,8 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     gap: 12,
     width: "100%",
+    justifyContent: "center",
+    alignItems: "center",
   },
   roundEndModal: {
     backgroundColor: "#0D3B0F",
