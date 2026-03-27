@@ -3,6 +3,7 @@ import { View, Text, StyleSheet } from "react-native";
 import { PlayerState, Seat, TURN_TIME_SECONDS } from "@/lib/game-engine";
 import { PlayingCard } from "./playing-card";
 import { CountdownTimer } from "./countdown-timer";
+import { Avatar } from "./avatar";
 
 interface PlayerPanelProps {
   player: PlayerState | undefined;
@@ -47,28 +48,15 @@ export function PlayerPanel({
     >
       {/* Avatar + Info */}
       <View style={styles.infoSection}>
-        <View style={styles.avatarWrapper}>
-          <View
-            style={[
-              styles.avatar,
-              { backgroundColor: seatColor },
-              isActive && styles.avatarActive,
-              hasTrio && styles.avatarTrio,
-            ]}
-          >
-            <Text style={styles.avatarText}>{initials}</Text>
-          </View>
-          {isDealer && (
-            <View style={styles.dealerBadge}>
-              <Text style={styles.dealerBadgeText}>D</Text>
-            </View>
-          )}
-          {hasTrio && (
-            <View style={styles.crownBadge}>
-              <Text style={styles.crownEmoji}>👑</Text>
-            </View>
-          )}
-        </View>
+        <Avatar
+          name={player.name}
+          size="medium"
+          isActive={isActive}
+          hasTrio={hasTrio}
+          seatColor={seatColor}
+          showDealer={isDealer}
+          showCrown={hasTrio}
+        />
         <View style={styles.nameSection}>
           <Text style={[styles.name, isActive && { color: "#FFD700" }, hasTrio && { color: "#FFD700" }]} numberOfLines={1}>
             {displayName}
@@ -140,67 +128,7 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     paddingHorizontal: 10,
   },
-  avatarWrapper: {
-    position: "relative",
-  },
-  avatar: {
-    width: 45,
-    height: 45,
-    borderRadius: 22.5,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  avatarActive: {
-    borderWidth: 2,
-    borderColor: "#FFD700",
-    shadowColor: "#FFD700",
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.6,
-    shadowRadius: 6,
-    elevation: 6,
-  },
-  avatarTrio: {
-    borderWidth: 2,
-    borderColor: "#FFD700",
-    shadowColor: "#FFD700",
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.8,
-    shadowRadius: 8,
-    elevation: 8,
-  },
-  avatarText: {
-    color: "#FFFFFF",
-    fontSize: 18,
-    fontWeight: "800",
-  },
-  dealerBadge: {
-    position: "absolute",
-    bottom: -3,
-    right: -3,
-    width: 14,
-    height: 14,
-    borderRadius: 7,
-    backgroundColor: "#FFD700",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  dealerBadgeText: {
-    color: "#0D3B0F",
-    fontSize: 8,
-    fontWeight: "900",
-  },
-  crownBadge: {
-    position: "absolute",
-    top: -12,
-    left: 4,
-    width: 22,
-    height: 22,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  crownEmoji: {
-    fontSize: 16,
-  },
+
   nameSection: {
     maxWidth: 100,
   },

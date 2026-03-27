@@ -8,14 +8,18 @@ import {
   TextInput,
   Modal,
   FlatList,
+  Platform,
 } from "react-native";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { useColors } from "@/hooks/use-colors";
+import { VoiceNoteRecorder } from "./voice-note-recorder";
 
 export interface ChatMessage {
   id: string;
   sender: string;
-  text: string;
+  text?: string;
+  audioUri?: string;
+  duration?: number;
   timestamp: number;
   seatNumber: number;
 }
@@ -23,6 +27,7 @@ export interface ChatMessage {
 interface GameChatProps {
   messages: ChatMessage[];
   onSendMessage: (text: string) => void;
+  onSendVoiceNote?: (audioUri: string, duration: number) => void;
   playerName: string;
   isVisible: boolean;
   onClose: () => void;
@@ -37,6 +42,7 @@ const PREFILLED_MESSAGES = [
 export function GameChat({
   messages,
   onSendMessage,
+  onSendVoiceNote,
   playerName,
   isVisible,
   onClose,
@@ -45,6 +51,7 @@ export function GameChat({
   const [customText, setCustomText] = useState("");
   const [showPrefilled, setShowPrefilled] = useState(false);
   const scrollViewRef = useRef<ScrollView>(null);
+  const [playingAudioId, setPlayingAudioId] = useState<string | null>(null);
 
   useEffect(() => {
     // Auto-scroll to bottom when new messages arrive
@@ -62,6 +69,12 @@ export function GameChat({
     if (customText.trim()) {
       onSendMessage(customText);
       setCustomText("");
+    }
+  };
+
+  const handleVoiceNoteComplete = (audioUri: string, duration: number) => {
+    if (onSendVoiceNote) {
+      onSendVoiceNote(audioUri, duration);
     }
   };
 
@@ -98,9 +111,19 @@ export function GameChat({
                 <Text style={[styles.senderName, { color: colors.primary }]}>
                   {msg.sender}
                 </Text>
-                <Text style={[styles.messageText, { color: colors.foreground }]}>
-                  {msg.text}
-                </Text>
+                {msg.text && (
+                  <Text style={[styles.messageText, { color: colors.foreground }]}>
+                    {msg.text}
+                  </Text>
+                )}
+                {msg.audioUri && (
+                  <View style={styles.voiceNoteContainer}>
+                    <MaterialIcons name="mic" size={16} color={colors.primary} />
+                    <Text style={[styles.voiceNoteText, { color: colors.muted }]}>
+                      🎤 Voice note ({msg.duration}s)
+                    </Text>
+                  </View>
+                )}
                 <Text style={[styles.timestamp, { color: colors.muted }]}>
                   {new Date(msg.timestamp).toLocaleTimeString([], {
                     hour: "2-digit",
@@ -161,6 +184,12 @@ export function GameChat({
             >
               <MaterialIcons name="emoji-emotions" size={20} color={colors.background} />
             </TouchableOpacity>
+            {Platform.OS !== "web" && (
+              <VoiceNoteRecorder
+                onRecordingComplete={handleVoiceNoteComplete}
+                maxDuration={30}
+              />
+            )}
             <TouchableOpacity
               style={[
                 styles.sendButton,
@@ -273,5 +302,16 @@ const styles = StyleSheet.create({
     borderRadius: 6,
     justifyContent: "center",
     alignItems: "center",
+  },
+  voiceNoteContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    marginTop: 4,
+    paddingVertical: 4,
+  },
+  voiceNoteText: {
+    fontSize: 12,
+    fontWeight: "500",
   },
 });

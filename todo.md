@@ -266,3 +266,14 @@
 - [x] Add real-time game chat with pre-filled messages (Badh badh ke aaiye, Naadri banenge ab)
 - [x] Add chat event handlers to server socket
 - [x] All 93 tests passing
+
+## V25 Player Avatars & Voice Notes
+
+- [x] Add player avatars with initials or profile pictures in player panels
+- [x] Create Avatar component with initials fallback
+- [x] Implement short audio voice note recording (max 30 seconds)
+- [x] Add voice note playback in game chat
+- [x] Integrate voice notes with WebSocket for real-time delivery
+- [x] Add voice note UI with record/play buttons
+- [x] Test voice notes on mobile and web
+- [x] All 93 tests passing
