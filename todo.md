@@ -328,3 +328,9 @@
 - [x] Move audio recorder to top right
 - [x] Remove emoji reactions component (covering cards)
 - [x] All 93 tests passing
+
+## V32 Audio/Mute Button Repositioning
+
+- [x] Move speaker and mute icon next to Chachu player panel (top right)
+- [x] Adjust layout to integrate with player panel area
+- [x] All 93 tests passing

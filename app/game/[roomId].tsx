@@ -376,37 +376,7 @@ export default function GameScreen() {
     <ScreenContainer edges={["top", "left", "right"]}>
       <View style={styles.gameRoot}>
 
-        {/* Top Right Control Panel - Mute & Audio Recorder */}
-        <View style={styles.topRightControlPanel}>
-          {/* Audio Recorder */}
-          <AudioRecorder
-            onRecordingComplete={(uri, duration) => {
-              console.log("Recording saved:", uri, "duration:", duration);
-            }}
-            onUploadComplete={(audioUrl) => {
-              console.log("Audio uploaded:", audioUrl);
-              if (roomId) {
-                console.log("Would send audio to room:", roomId);
-              }
-            }}
-            onUploadError={(error) => {
-              console.error("Audio upload failed:", error);
-            }}
-          />
 
-          {/* Mute Toggle */}
-          <TouchableOpacity
-            style={styles.controlButton}
-            onPress={toggleMute}
-            activeOpacity={0.7}
-          >
-            <MaterialIcons
-              name={muted ? "volume-off" : "volume-up"}
-              size={20}
-              color={muted ? "#81C784" : "#FFD700"}
-            />
-          </TouchableOpacity>
-        </View>
 
         {/* Trick complete banner */}
         {state.phase === "trick_complete" && state.currentTrick?.winnerSeat != null && (
@@ -570,6 +540,34 @@ export default function GameScreen() {
                 onComplete={handleAutoPlay}
               />
             )}
+            {/* Audio Recorder & Mute Controls */}
+            <View style={styles.audioControlsRow}>
+              <AudioRecorder
+                onRecordingComplete={(uri, duration) => {
+                  console.log("Recording saved:", uri, "duration:", duration);
+                }}
+                onUploadComplete={(audioUrl) => {
+                  console.log("Audio uploaded:", audioUrl);
+                  if (roomId) {
+                    console.log("Would send audio to room:", roomId);
+                  }
+                }}
+                onUploadError={(error) => {
+                  console.error("Audio upload failed:", error);
+                }}
+              />
+              <TouchableOpacity
+                style={styles.muteControlButton}
+                onPress={toggleMute}
+                activeOpacity={0.7}
+              >
+                <MaterialIcons
+                  name={muted ? "volume-off" : "volume-up"}
+                  size={18}
+                  color={muted ? "#81C784" : "#FFD700"}
+                />
+              </TouchableOpacity>
+            </View>
           </View>
 
           {/* Legal move hint */}
@@ -873,6 +871,21 @@ const styles = StyleSheet.create({
     zIndex: 50,
     gap: 12,
     alignItems: "flex-end",
+  },
+  audioControlsRow: {
+    flexDirection: "row",
+    gap: 8,
+    alignItems: "center",
+  },
+  muteControlButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: "#0D3B0FCC",
+    justifyContent: "center",
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: "#2E7D3260",
   },
   controlButton: {
     width: 48,
