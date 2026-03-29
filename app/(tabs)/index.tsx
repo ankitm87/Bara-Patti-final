@@ -122,7 +122,7 @@ export default function HomeScreen() {
           activeOpacity={0.8}
         >
           <View style={styles.quickPlayIcon}>
-            <MaterialIcons name="play-arrow" size={36} color="#0D3B0F" />
+            <Text style={styles.quickPlayEmoji}>▶️</Text>
           </View>
           <View style={styles.quickPlayTextWrap}>
             <Text style={styles.quickPlayTitle}>Quick Play</Text>
@@ -141,7 +141,7 @@ export default function HomeScreen() {
               onPress={handleCreateGame}
               activeOpacity={0.8}
             >
-              <MaterialIcons name="add-circle" size={24} color="#FFD700" />
+              <Text style={styles.secondaryButtonEmoji}>➕</Text>
               <View style={styles.buttonTextContainer}>
                 <Text style={styles.secondaryButtonText}>Create Game</Text>
                 <Text style={styles.secondaryButtonSub}>
@@ -155,7 +155,7 @@ export default function HomeScreen() {
               onPress={handleJoinGame}
               activeOpacity={0.8}
             >
-              <MaterialIcons name="group-add" size={24} color="#FFD700" />
+              <Text style={styles.secondaryButtonEmoji}>👥</Text>
               <View style={styles.buttonTextContainer}>
                 <Text style={styles.secondaryButtonText}>Join Game</Text>
                 <Text style={styles.secondaryButtonSub}>
@@ -202,7 +202,7 @@ export default function HomeScreen() {
             onPress={() => router.push("/login")}
             activeOpacity={0.8}
           >
-            <MaterialIcons name="login" size={20} color="#FFD700" />
+            <Text style={styles.loginPromptEmoji}>🔐</Text>
             <Text style={styles.loginPromptText}>
               Sign in to play with friends
             </Text>
@@ -291,6 +291,9 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
+  quickPlayEmoji: {
+    fontSize: 32,
+  },
   quickPlayTextWrap: {
     flex: 1,
   },
@@ -330,6 +333,9 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     borderWidth: 1,
     borderColor: "#D4AF37",
+  },
+  secondaryButtonEmoji: {
+    fontSize: 24,
   },
   buttonTextContainer: {
     flex: 1,
@@ -389,9 +395,13 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#FFD700",
   },
+  loginPromptEmoji: {
+    fontSize: 20,
+  },
   loginPromptText: {
     fontSize: 14,
     fontWeight: "700",
     color: "#FFD700",
+    textAlign: "center",
   },
 });

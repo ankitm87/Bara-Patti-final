@@ -284,3 +284,12 @@
 - [x] Implement admin-only game start (only seat 0/room creator can start)
 - [x] Add waiting message for non-creators in lobby
 - [x] All 93 tests passing
+
+## V27 Home Screen Icon Fix
+
+- [x] Replace MaterialIcons with emoji icons for cross-platform compatibility
+- [x] Update Quick Play button icon to ▶️
+- [x] Update Create Game button icon to ➕
+- [x] Update Join Game button icon to 👥
+- [x] Update Sign In button icon to 🔐
+- [x] All 93 tests passing
