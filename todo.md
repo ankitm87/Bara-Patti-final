@@ -311,3 +311,13 @@
 - [x] Update home screen greeting to use display name instead of email
 - [x] Update all screens to use display name instead of email
 - [x] All 93 tests passing
+
+## V30 WebSocket Audio & Emoji Integration
+
+- [x] Check existing WebSocket implementation
+- [x] Add audio and emoji message types to protocol
+- [x] Implement audio file upload to S3
+- [x] Send emoji reactions via WebSocket
+- [x] Display received audio/emoji in game chat
+- [x] Server-side handlers for audio-message and emoji-reaction
+- [x] All 93 tests passing

@@ -394,9 +394,17 @@ export default function GameScreen() {
 
           {/* Audio Recorder */}
           <AudioRecorder
-            onRecordingComplete={(uri) => {
-              console.log("Recording saved:", uri);
-              // TODO: Send audio via WebSocket
+            onRecordingComplete={(uri, duration) => {
+              console.log("Recording saved:", uri, "duration:", duration);
+            }}
+            onUploadComplete={(audioUrl) => {
+              console.log("Audio uploaded:", audioUrl);
+              if (roomId) {
+                console.log("Would send audio to room:", roomId);
+              }
+            }}
+            onUploadError={(error) => {
+              console.error("Audio upload failed:", error);
             }}
           />
 
@@ -404,7 +412,9 @@ export default function GameScreen() {
           <EmojiReactions
             onReactionSelect={(emoji) => {
               console.log("Reaction:", emoji);
-              // TODO: Send emoji via WebSocket
+              if (roomId) {
+                console.log("Would send emoji to room:", roomId);
+              }
             }}
           />
         </View>

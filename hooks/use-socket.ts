@@ -127,6 +127,51 @@ export function useSocket(serverUrl: string) {
     []
   );
 
+  const sendAudioMessage = useCallback(
+    (roomId: string, seatNumber: number, audioUrl: string, duration: number) => {
+      socketRef.current?.emit("audio-message", {
+        roomId,
+        seatNumber,
+        audioUrl,
+        duration,
+        timestamp: Date.now(),
+      });
+    },
+    []
+  );
+
+  const onAudioMessage = useCallback(
+    (callback: (message: any) => void) => {
+      socketRef.current?.on("audio-message", callback);
+      return () => {
+        socketRef.current?.off("audio-message", callback);
+      };
+    },
+    []
+  );
+
+  const sendEmojiReaction = useCallback(
+    (roomId: string, seatNumber: number, emoji: string) => {
+      socketRef.current?.emit("emoji-reaction", {
+        roomId,
+        seatNumber,
+        emoji,
+        timestamp: Date.now(),
+      });
+    },
+    []
+  );
+
+  const onEmojiReaction = useCallback(
+    (callback: (reaction: any) => void) => {
+      socketRef.current?.on("emoji-reaction", callback);
+      return () => {
+        socketRef.current?.off("emoji-reaction", callback);
+      };
+    },
+    []
+  );
+
   return {
     socket: socketRef.current,
     isConnected: isConnectedRef.current,
@@ -141,5 +186,9 @@ export function useSocket(serverUrl: string) {
     onGameState,
     sendChatMessage,
     onChatMessage,
+    sendAudioMessage,
+    onAudioMessage,
+    sendEmojiReaction,
+    onEmojiReaction,
   };
 }

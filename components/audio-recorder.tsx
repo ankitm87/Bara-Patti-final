@@ -4,19 +4,26 @@ import { setAudioModeAsync, useAudioRecorder } from "expo-audio";
 import * as Haptics from "expo-haptics";
 import * as FileSystem from "expo-file-system/legacy";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
+import { uploadAudioToS3, generateAudioFileName } from "@/lib/audio-upload";
 
 const MAX_RECORDING_TIME = 10000; // 10 seconds in milliseconds
 
 interface AudioRecorderProps {
-  onRecordingComplete?: (uri: string) => void;
+  onRecordingComplete?: (uri: string, duration: number) => void;
   onRecordingStart?: () => void;
   onRecordingStop?: () => void;
+  onUploadStart?: () => void;
+  onUploadComplete?: (audioUrl: string) => void;
+  onUploadError?: (error: Error) => void;
 }
 
 export function AudioRecorder({
   onRecordingComplete,
   onRecordingStart,
   onRecordingStop,
+  onUploadStart,
+  onUploadComplete,
+  onUploadError,
 }: AudioRecorderProps) {
   const [isRecording, setIsRecording] = useState(false);
   const [recordingTime, setRecordingTime] = useState(0);
@@ -141,9 +148,20 @@ export function AudioRecorder({
 
       await recordingRef.current.stopAndUnloadAsync();
       const uri = recordingRef.current.getURI();
+      const duration = recordingTime;
 
       if (uri) {
-        onRecordingComplete?.(uri);
+        // Upload to S3
+        try {
+          onUploadStart?.();
+          const fileName = generateAudioFileName();
+          const audioUrl = await uploadAudioToS3(uri, fileName);
+          onRecordingComplete?.(uri, duration);
+          onUploadComplete?.(audioUrl);
+        } catch (uploadError) {
+          console.error("Failed to upload audio:", uploadError);
+          onUploadError?.(uploadError instanceof Error ? uploadError : new Error("Upload failed"));
+        }
       }
 
       recordingRef.current = null;

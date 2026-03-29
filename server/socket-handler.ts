@@ -189,6 +189,41 @@ export function initializeSocketIO(httpServer: HTTPServer) {
       });
     });
 
+    socket.on("audio-message", (data: { roomId: string; seatNumber: number; audioUrl: string; duration: number; timestamp: number }) => {
+      const room = gameRooms.get(data.roomId);
+      if (!room) return;
+
+      const player = room.gameState.players.find((p) => p.seat === data.seatNumber);
+      if (!player) return;
+
+      // Broadcast audio message to all players in the room
+      io.to(data.roomId).emit("audio-message", {
+        id: `${socket.id}-${data.timestamp}`,
+        sender: player.name,
+        audioUrl: data.audioUrl,
+        duration: data.duration,
+        timestamp: data.timestamp,
+        seatNumber: data.seatNumber,
+      });
+    });
+
+    socket.on("emoji-reaction", (data: { roomId: string; seatNumber: number; emoji: string; timestamp: number }) => {
+      const room = gameRooms.get(data.roomId);
+      if (!room) return;
+
+      const player = room.gameState.players.find((p) => p.seat === data.seatNumber);
+      if (!player) return;
+
+      // Broadcast emoji reaction to all players in the room
+      io.to(data.roomId).emit("emoji-reaction", {
+        id: `${socket.id}-${data.timestamp}`,
+        sender: player.name,
+        emoji: data.emoji,
+        timestamp: data.timestamp,
+        seatNumber: data.seatNumber,
+      });
+    });
+
     socket.on("disconnect", () => {
       console.log(`[socket] Player disconnected: ${socket.id}`);
 
