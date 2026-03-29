@@ -22,6 +22,8 @@ import { TrickScoreboard } from "@/components/trick-scoreboard";
 
 import { LegalMoveHint } from "@/components/legal-move-hint";
 import { ChatBubble } from "@/components/chat-bubble";
+import { AudioRecorder } from "@/components/audio-recorder";
+import { EmojiReactions } from "@/components/emoji-reactions";
 import {
   Card,
   Seat,
@@ -375,18 +377,37 @@ export default function GameScreen() {
     <ScreenContainer edges={["top", "left", "right"]}>
       <View style={styles.gameRoot}>
 
-        {/* Mute Toggle */}
-        <TouchableOpacity
-          style={[styles.muteBtn, { right: 8, bottom: 8, top: "auto" }]}
-          onPress={toggleMute}
-          activeOpacity={0.7}
-        >
-          <MaterialIcons
-            name={muted ? "volume-off" : "volume-up"}
-            size={20}
-            color={muted ? "#81C784" : "#FFD700"}
+        {/* Right Control Panel - Mute, Audio Recorder, Emoji Reactions */}
+        <View style={styles.rightControlPanel}>
+          {/* Mute Toggle */}
+          <TouchableOpacity
+            style={styles.controlButton}
+            onPress={toggleMute}
+            activeOpacity={0.7}
+          >
+            <MaterialIcons
+              name={muted ? "volume-off" : "volume-up"}
+              size={20}
+              color={muted ? "#81C784" : "#FFD700"}
+            />
+          </TouchableOpacity>
+
+          {/* Audio Recorder */}
+          <AudioRecorder
+            onRecordingComplete={(uri) => {
+              console.log("Recording saved:", uri);
+              // TODO: Send audio via WebSocket
+            }}
           />
-        </TouchableOpacity>
+
+          {/* Emoji Reactions */}
+          <EmojiReactions
+            onReactionSelect={(emoji) => {
+              console.log("Reaction:", emoji);
+              // TODO: Send emoji via WebSocket
+            }}
+          />
+        </View>
 
         {/* Trick complete banner */}
         {state.phase === "trick_complete" && state.currentTrick?.winnerSeat != null && (
@@ -836,6 +857,24 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "700",
     textAlign: "center",
+  },
+  rightControlPanel: {
+    position: "absolute",
+    right: 8,
+    bottom: 8,
+    zIndex: 50,
+    gap: 12,
+    alignItems: "flex-end",
+  },
+  controlButton: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: "#0D3B0FCC",
+    justifyContent: "center",
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: "#2E7D3260",
   },
   muteBtn: {
     position: "absolute",

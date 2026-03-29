@@ -293,3 +293,13 @@
 - [x] Update Join Game button icon to 👥
 - [x] Update Sign In button icon to 🔐
 - [x] All 93 tests passing
+
+## V28 Audio Recording & Emoji Reactions
+
+- [x] Create AudioRecorder component with 10-second max recording
+- [x] Add record button to game screen
+- [x] Create emoji reactions component with winning/losing/teasing emojis
+- [x] Add emoji buttons to game screen
+- [ ] Integrate with WebSocket for real-time delivery
+- [x] Test audio recording on mobile and web
+- [x] All 93 tests passing
