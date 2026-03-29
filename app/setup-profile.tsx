@@ -2,10 +2,13 @@ import React, { useState } from "react";
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from "react-native";
 import { useRouter } from "expo-router";
 import { ScreenContainer } from "@/components/screen-container";
+import { useAuth } from "@/hooks/use-auth";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import * as Auth from "@/lib/_core/auth";
 
 export default function SetupProfileScreen() {
   const router = useRouter();
+  const { user } = useAuth();
   const [name, setName] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -17,7 +20,18 @@ export default function SetupProfileScreen() {
 
     setLoading(true);
     try {
+      // Save name to local storage
       await AsyncStorage.setItem("@bara_patti_player_name", name.trim());
+      
+      // Update user info with the new name
+      if (user) {
+        const updatedUser: Auth.User = {
+          ...user,
+          name: name.trim(),
+        };
+        await Auth.setUserInfo(updatedUser);
+      }
+      
       router.replace("/(tabs)");
     } catch (error) {
       Alert.alert("Error", "Failed to save profile. Please try again.");

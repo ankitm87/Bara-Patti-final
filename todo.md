@@ -303,3 +303,11 @@
 - [ ] Integrate with WebSocket for real-time delivery
 - [x] Test audio recording on mobile and web
 - [x] All 93 tests passing
+
+## V29 Display Name Capture & Personalization
+
+- [x] Ensure name is captured after OAuth login
+- [x] Store display name in user profile
+- [x] Update home screen greeting to use display name instead of email
+- [x] Update all screens to use display name instead of email
+- [x] All 93 tests passing

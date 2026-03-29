@@ -110,7 +110,7 @@ export default function HomeScreen() {
               </Text>
             </View>
             <Text style={styles.greetingText}>
-              Welcome, {user.name || user.email?.split("@")[0] || "Player"}
+              Welcome, {user.name || "Player"}
             </Text>
           </View>
         )}
