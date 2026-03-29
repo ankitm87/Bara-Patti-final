@@ -23,7 +23,6 @@ import { TrickScoreboard } from "@/components/trick-scoreboard";
 import { LegalMoveHint } from "@/components/legal-move-hint";
 import { ChatBubble } from "@/components/chat-bubble";
 import { AudioRecorder } from "@/components/audio-recorder";
-import { EmojiReactions } from "@/components/emoji-reactions";
 import {
   Card,
   Seat,
@@ -377,21 +376,8 @@ export default function GameScreen() {
     <ScreenContainer edges={["top", "left", "right"]}>
       <View style={styles.gameRoot}>
 
-        {/* Right Control Panel - Mute, Audio Recorder, Emoji Reactions */}
-        <View style={styles.rightControlPanel}>
-          {/* Mute Toggle */}
-          <TouchableOpacity
-            style={styles.controlButton}
-            onPress={toggleMute}
-            activeOpacity={0.7}
-          >
-            <MaterialIcons
-              name={muted ? "volume-off" : "volume-up"}
-              size={20}
-              color={muted ? "#81C784" : "#FFD700"}
-            />
-          </TouchableOpacity>
-
+        {/* Top Right Control Panel - Mute & Audio Recorder */}
+        <View style={styles.topRightControlPanel}>
           {/* Audio Recorder */}
           <AudioRecorder
             onRecordingComplete={(uri, duration) => {
@@ -408,15 +394,18 @@ export default function GameScreen() {
             }}
           />
 
-          {/* Emoji Reactions */}
-          <EmojiReactions
-            onReactionSelect={(emoji) => {
-              console.log("Reaction:", emoji);
-              if (roomId) {
-                console.log("Would send emoji to room:", roomId);
-              }
-            }}
-          />
+          {/* Mute Toggle */}
+          <TouchableOpacity
+            style={styles.controlButton}
+            onPress={toggleMute}
+            activeOpacity={0.7}
+          >
+            <MaterialIcons
+              name={muted ? "volume-off" : "volume-up"}
+              size={20}
+              color={muted ? "#81C784" : "#FFD700"}
+            />
+          </TouchableOpacity>
         </View>
 
         {/* Trick complete banner */}
@@ -867,6 +856,15 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "700",
     textAlign: "center",
+  },
+  topRightControlPanel: {
+    position: "absolute",
+    top: 12,
+    right: 12,
+    zIndex: 50,
+    gap: 12,
+    alignItems: "flex-end",
+    flexDirection: "row",
   },
   rightControlPanel: {
     position: "absolute",

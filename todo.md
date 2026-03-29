@@ -321,3 +321,10 @@
 - [x] Display received audio/emoji in game chat
 - [x] Server-side handlers for audio-message and emoji-reaction
 - [x] All 93 tests passing
+
+## V31 Game Screen UI Reorganization
+
+- [x] Move mute button to top right
+- [x] Move audio recorder to top right
+- [x] Remove emoji reactions component (covering cards)
+- [x] All 93 tests passing
