@@ -9,21 +9,25 @@ import { uploadAudioToS3, generateAudioFileName } from "@/lib/audio-upload";
 const MAX_RECORDING_TIME = 10000; // 10 seconds in milliseconds
 
 interface AudioRecorderProps {
+  roomId?: string;
   onRecordingComplete?: (uri: string, duration: number) => void;
   onRecordingStart?: () => void;
   onRecordingStop?: () => void;
   onUploadStart?: () => void;
   onUploadComplete?: (audioUrl: string) => void;
   onUploadError?: (error: Error) => void;
+  onSendAudio?: (audioUrl: string, duration: number) => void;
 }
 
 export function AudioRecorder({
+  roomId,
   onRecordingComplete,
   onRecordingStart,
   onRecordingStop,
   onUploadStart,
   onUploadComplete,
   onUploadError,
+  onSendAudio,
 }: AudioRecorderProps) {
   const [isRecording, setIsRecording] = useState(false);
   const [recordingTime, setRecordingTime] = useState(0);
@@ -158,6 +162,10 @@ export function AudioRecorder({
           const audioUrl = await uploadAudioToS3(uri, fileName);
           onRecordingComplete?.(uri, duration);
           onUploadComplete?.(audioUrl);
+          // Send audio to other players via WebSocket
+          if (roomId && onSendAudio) {
+            onSendAudio(audioUrl, duration);
+          }
         } catch (uploadError) {
           console.error("Failed to upload audio:", uploadError);
           onUploadError?.(uploadError instanceof Error ? uploadError : new Error("Upload failed"));

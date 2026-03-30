@@ -44,6 +44,7 @@ import {
 } from "@/lib/game-engine";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { useSound } from "@/hooks/use-sound";
+import { useSocket } from "@/hooks/use-socket";
 import { trpc } from "@/lib/trpc";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
@@ -543,17 +544,18 @@ export default function GameScreen() {
             {/* Audio Recorder & Mute Controls */}
             <View style={styles.audioControlsRow}>
               <AudioRecorder
+                roomId={roomId as string}
                 onRecordingComplete={(uri, duration) => {
                   console.log("Recording saved:", uri, "duration:", duration);
                 }}
                 onUploadComplete={(audioUrl) => {
                   console.log("Audio uploaded:", audioUrl);
-                  if (roomId) {
-                    console.log("Would send audio to room:", roomId);
-                  }
                 }}
                 onUploadError={(error) => {
                   console.error("Audio upload failed:", error);
+                }}
+                onSendAudio={(audioUrl, duration) => {
+                  console.log("Sending audio to room:", roomId, "URL:", audioUrl);
                 }}
               />
               <TouchableOpacity

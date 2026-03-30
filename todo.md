@@ -334,3 +334,10 @@
 - [x] Move speaker and mute icon next to Chachu player panel (top right)
 - [x] Adjust layout to integrate with player panel area
 - [x] All 93 tests passing
+
+## V33 Connect Audio to WebSocket
+
+- [x] Update audio recorder to send audio via WebSocket when recording completes
+- [x] Display received audio messages in game chat (already supported in GameChat)
+- [x] Audio recorder now accepts roomId and onSendAudio callback
+- [x] All 93 tests passing
