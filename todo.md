@@ -352,3 +352,11 @@
 - [x] Load and apply learned patterns on game start
 - [x] Bot training system integrated into game screen
 - [x] All 93 tests passing
+
+## V35 Critical Bug Fixes
+
+- [x] Fix trump cutting rule - allow any card if no higher trump available
+- [x] Trick winner determination logic verified (working correctly)
+- [x] Connect audio recorder to WebSocket for real-time delivery
+- [x] Updated test to match correct trump logic
+- [x] All 93 tests passing

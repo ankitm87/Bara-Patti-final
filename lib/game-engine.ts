@@ -271,8 +271,8 @@ export function getValidCards(
         );
         if (higherTrumps.length > 0) return higherTrumps;
       }
-      // Has trump but no higher trump — must still play a trump card
-      return trumpCards;
+      // Has trump but no higher trump — can play ANY card (save your trumps)
+      return hand;
     }
     // No trump played yet — must cut with any trump
     return trumpCards;

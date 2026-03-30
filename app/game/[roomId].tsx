@@ -59,6 +59,7 @@ export default function GameScreen() {
   const { roomId } = useLocalSearchParams<{ roomId: string }>();
   const { user } = useAuth();
   const { state, dispatch } = useGame();
+  const { socket } = useSocket(process.env.EXPO_PUBLIC_API_URL || "http://localhost:3000");
   // selectedCard removed - single tap plays directly
   const [showTrioModal, setShowTrioModal] = useState(false);
   const [showRoundEnd, setShowRoundEnd] = useState(false);
@@ -583,6 +584,16 @@ export default function GameScreen() {
                 }}
                 onSendAudio={(audioUrl, duration) => {
                   console.log("Sending audio to room:", roomId, "URL:", audioUrl);
+                  // Send audio message to other players via WebSocket
+                  if (socket && roomId) {
+                    socket.emit("audio-message", {
+                      roomId,
+                      seatNumber: mySeat,
+                      audioUrl,
+                      duration: Math.round(duration / 1000),
+                      timestamp: Date.now(),
+                    });
+                  }
                 }}
               />
               <TouchableOpacity
