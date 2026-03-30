@@ -341,3 +341,14 @@
 - [x] Display received audio messages in game chat (already supported in GameChat)
 - [x] Audio recorder now accepts roomId and onSendAudio callback
 - [x] All 93 tests passing
+
+## V34 Bot Training System
+
+- [x] Design bot learning data structures (move history, outcomes, patterns)
+- [x] Implement game state tracking for bot decisions
+- [x] Record outcomes of bot moves (win/loss/trick won)
+- [x] Create bot decision-making with learned patterns
+- [x] Persist training data to AsyncStorage
+- [x] Load and apply learned patterns on game start
+- [x] Bot training system integrated into game screen
+- [x] All 93 tests passing

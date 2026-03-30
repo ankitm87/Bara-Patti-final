@@ -46,6 +46,7 @@ import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { useSound } from "@/hooks/use-sound";
 import { useSocket } from "@/hooks/use-socket";
 import { trpc } from "@/lib/trpc";
+import { hashGameState, getBestLearnedMoves, BotTrainingData, initializeBotTraining } from "@/lib/bot-training";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 
@@ -63,6 +64,7 @@ export default function GameScreen() {
   const [showRoundEnd, setShowRoundEnd] = useState(false);
   const [dealingCardIndex, setDealingCardIndex] = useState(0);
   const [showShuffling, setShowShuffling] = useState(false);
+  const botTrainingRef = useRef<Map<string, BotTrainingData>>(new Map());
 
   const [trickWinnerSeat, setTrickWinnerSeat] = useState<Seat | null>(null);
   const logIdRef = useRef(0);
@@ -121,9 +123,34 @@ export default function GameScreen() {
         !state.currentTrick || state.currentTrick.cards.length === 0
       );
       if (validForPlayer.length > 0) {
-        // Play lowest legal card (smart auto-play)
-        const sorted = [...validForPlayer].sort((a, b) => RANK_ORDER[a.rank] - RANK_ORDER[b.rank]);
-        const card = sorted[0];  // Both bots and timeout auto-play use lowest card
+        // For bots, use learned patterns; for humans, play lowest card
+        let card: Card;
+        if (isBot) {
+          // Get bot training data
+          let botTraining = botTrainingRef.current.get(currentPlayer.userId);
+          if (!botTraining) {
+            botTraining = initializeBotTraining(currentPlayer.userId);
+            botTrainingRef.current.set(currentPlayer.userId, botTraining);
+          }
+
+          // Create game state snapshot for learning
+          const stateSnapshot = {
+            trumpSuit: state.trumpSuit,
+            myHand: currentPlayer.hand,
+            currentTrick: state.currentTrick?.cards || [],
+            completedTricksCount: state.completedTricks.length,
+            cardsPlayedByOpponents: state.completedTricks.flatMap((t) => t.cards.map((c) => c.card)),
+            isFirstTrick: state.completedTricks.length === 0,
+          };
+
+          const stateHash = hashGameState(stateSnapshot);
+          const bestCards = getBestLearnedMoves(botTraining, stateHash, validForPlayer);
+          card = bestCards[0];
+        } else {
+          // Human timeout: play lowest card
+          const sorted = [...validForPlayer].sort((a, b) => RANK_ORDER[a.rank] - RANK_ORDER[b.rank]);
+          card = sorted[0];
+        }
         addLog(
           isBot
             ? `${currentPlayer.name} played ${getCardDisplay(card)}`
