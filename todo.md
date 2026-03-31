@@ -360,3 +360,11 @@
 - [x] Connect audio recorder to WebSocket for real-time delivery
 - [x] Updated test to match correct trump logic
 - [x] All 93 tests passing
+
+
+## V36 Icon Rendering & Multiplayer Join Notifications
+
+- [x] Fix icon rendering - mic, mute, back button, home, history, profile showing as boxes instead of actual icons
+- [x] Implement real-time player join notifications in lobby - when a player joins, show notification to game creator
+- [x] Fix player join detection - ank_it joined but a.maheshwari87 doesn't see the join notification
+- [x] Enable 2 real players + 2 bots game mode - allow starting game with mixed real and bot players

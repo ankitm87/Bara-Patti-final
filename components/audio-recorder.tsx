@@ -217,11 +217,17 @@ export function AudioRecorder({
         onPress={isRecording ? stopRecording : startRecording}
         activeOpacity={0.7}
       >
-        <MaterialIcons
-          name={isRecording ? "stop-circle" : "mic"}
-          size={24}
-          color={isRecording ? "#E74C3C" : "#FFD700"}
-        />
+        {Platform.OS === "web" ? (
+          <Text style={{ fontSize: 24, color: isRecording ? "#E74C3C" : "#FFD700" }}>
+            {isRecording ? "⏹️" : "🎤"}
+          </Text>
+        ) : (
+          <MaterialIcons
+            name={isRecording ? "stop-circle" : "mic"}
+            size={24}
+            color={isRecording ? "#E74C3C" : "#FFD700"}
+          />
+        )}
       </TouchableOpacity>
     </View>
   );

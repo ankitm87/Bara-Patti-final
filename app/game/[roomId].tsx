@@ -442,11 +442,15 @@ export default function GameScreen() {
           onPress={() => router.back()}
           activeOpacity={0.7}
         >
-          <MaterialIcons
-            name="arrow-back"
-            size={24}
-            color="#FFD700"
-          />
+          {Platform.OS === "web" ? (
+            <Text style={{ fontSize: 24, color: "#A5D6A7" }}>←</Text>
+          ) : (
+            <MaterialIcons
+              name="arrow-back"
+              size={24}
+              color="#A5D6A7"
+            />
+          )}
         </TouchableOpacity>
 
         {/* Table Area */}
@@ -601,11 +605,17 @@ export default function GameScreen() {
                 onPress={toggleMute}
                 activeOpacity={0.7}
               >
-                <MaterialIcons
-                  name={muted ? "volume-off" : "volume-up"}
-                  size={18}
-                  color={muted ? "#81C784" : "#FFD700"}
-                />
+                {Platform.OS === "web" ? (
+                  <Text style={{ fontSize: 24, color: muted ? "#81C784" : "#FFD700" }}>
+                    {muted ? "🔇" : "🔊"}
+                  </Text>
+                ) : (
+                  <MaterialIcons
+                    name={muted ? "volume-off" : "volume-up"}
+                    size={24}
+                    color={muted ? "#81C784" : "#FFD700"}
+                  />
+                )}
               </TouchableOpacity>
             </View>
           </View>

@@ -30,8 +30,11 @@ export default function LobbyScreen() {
   const { user } = useAuth();
   const { state, dispatch } = useGame();
   const [isReady, setIsReady] = useState(false);
+  const [joinNotification, setJoinNotification] = useState<string | null>(null);
   const hasNavigated = useRef(false);
-  const socket = useSocket("http://localhost:3000");
+  const previousPlayerCountRef = useRef(0);
+  const apiUrl = process.env.EXPO_PUBLIC_API_URL || "http://localhost:3000";
+  const socket = useSocket(apiUrl);
 
   // Initialize room with current player and sync with server
   useEffect(() => {
@@ -96,6 +99,23 @@ export default function LobbyScreen() {
     return socket.onRoomState((serverState) => {
       // Sync server state to local state
       dispatch({ type: "CREATE_ROOM", roomId });
+      
+      // Check for new players joining
+      const newPlayerCount = serverState.players.length;
+      if (newPlayerCount > previousPlayerCountRef.current) {
+        // Find the new player
+        const newPlayer = serverState.players.find((p) => {
+          const alreadyIn = state.players.find((existing) => existing.userId === p.userId);
+          return !alreadyIn;
+        });
+        if (newPlayer) {
+          setJoinNotification(`${newPlayer.name} joined the game!`);
+          setTimeout(() => setJoinNotification(null), 3000);
+        }
+      }
+      previousPlayerCountRef.current = newPlayerCount;
+      
+      // Add new players to local state
       serverState.players.forEach((player) => {
         const alreadyIn = state.players.find((p) => p.userId === player.userId);
         if (!alreadyIn) {
@@ -103,7 +123,7 @@ export default function LobbyScreen() {
         }
       });
     });
-  }, [roomId]);
+  }, [roomId, state.players]);
 
   // Listen for game state updates from server
   useEffect(() => {
@@ -219,6 +239,12 @@ export default function LobbyScreen() {
 
   return (
     <ScreenContainer edges={["top", "bottom", "left", "right"]}>
+      {/* Join Notification Toast */}
+      {joinNotification && (
+        <View style={styles.notificationToast}>
+          <Text style={styles.notificationText}>{joinNotification}</Text>
+        </View>
+      )}
       <View style={styles.container}>
         {/* Header */}
         <View style={styles.header}>
@@ -227,7 +253,11 @@ export default function LobbyScreen() {
             style={styles.backButton}
             activeOpacity={0.7}
           >
-            <MaterialIcons name="arrow-back" size={24} color="#A5D6A7" />
+            {Platform.OS === "web" ? (
+              <Text style={{ fontSize: 24, color: "#A5D6A7" }}>←</Text>
+            ) : (
+              <MaterialIcons name="arrow-back" size={24} color="#A5D6A7" />
+            )}
           </TouchableOpacity>
           <View style={styles.headerCenter}>
             <Text style={styles.headerTitle}>Game Lobby</Text>
@@ -238,7 +268,11 @@ export default function LobbyScreen() {
             style={styles.shareBtn}
             activeOpacity={0.7}
           >
-            <MaterialIcons name="share" size={22} color="#FFD700" />
+            {Platform.OS === "web" ? (
+              <Text style={{ fontSize: 22, color: "#FFD700" }}>📤</Text>
+            ) : (
+              <MaterialIcons name="share" size={22} color="#FFD700" />
+            )}
           </TouchableOpacity>
         </View>
 
@@ -297,14 +331,14 @@ export default function LobbyScreen() {
 
         {/* Actions */}
         <View style={styles.actions}>
+          {/* Fill with AI button */}
           {playerCount < 4 && (
             <TouchableOpacity
               style={styles.fillButton}
               onPress={handleFillAI}
-              activeOpacity={0.7}
+              activeOpacity={0.8}
             >
-              <MaterialIcons name="smart-toy" size={18} color="#A5D6A7" />
-              <Text style={styles.fillButtonText}>Fill with Bots</Text>
+              <Text style={styles.fillButtonText}>Fill with AI Players</Text>
             </TouchableOpacity>
           )}
 
@@ -621,5 +655,27 @@ const styles = StyleSheet.create({
     color: "#FFD700",
     fontSize: 15,
     fontWeight: "700",
+  },
+  notificationToast: {
+    position: "absolute",
+    top: 60,
+    left: 16,
+    right: 16,
+    backgroundColor: "#4ADE80",
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 10,
+    zIndex: 1000,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3,
+    elevation: 5,
+  },
+  notificationText: {
+    color: "#0D3B0F",
+    fontSize: 14,
+    fontWeight: "600",
+    textAlign: "center",
   },
 });
