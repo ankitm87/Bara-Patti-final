@@ -1,5 +1,5 @@
 {
-  "buildCommand": "bash build-vercel.sh",
+  "buildCommand": "",
   "outputDirectory": "dist",
   "rewrites": [
     {
