@@ -14,7 +14,9 @@ import { Seat, PlayerState } from "@/lib/game-engine";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import * as Linking from "expo-linking";
 import { useSocket } from "@/hooks/use-socket";
+import { useRoomPolling } from "@/hooks/use-room-polling";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { trpc } from "@/lib/trpc";
 
 const SEAT_COLORS = ["#4CAF50", "#2196F3", "#FF9800", "#E91E63"];
 
@@ -35,6 +37,7 @@ export default function LobbyScreen() {
   const previousPlayerCountRef = useRef(0);
   const apiUrl = process.env.EXPO_PUBLIC_API_URL || "http://localhost:3000";
   const socket = useSocket(apiUrl);
+  const roomState = useRoomPolling(roomId, 1000); // Poll every 1 second
 
   // Initialize room with current player and sync with server
   useEffect(() => {
@@ -65,67 +68,69 @@ export default function LobbyScreen() {
       // Check if this is the first player (room creator) or joining player
       const isFirstPlayer = state.players.length === 0;
       if (isFirstPlayer) {
-        // First player creates room on server
-        socket.createRoom(roomId, { name: playerName, avatar: "" }).then((result) => {
-          if (result.success) {
+        // First player creates room via HTTP
+        trpc.room.create.useMutation({
+          onSuccess: () => {
             dispatch({
               type: "ADD_PLAYER",
               player: { ...playerData, seat: 0 as Seat, odColor: SEAT_COLORS[0] },
             });
-          }
+          },
+          onError: (error: any) => {
+            console.error("Failed to create room:", error);
+          },
+        }).mutate({
+          roomId,
+          playerName: user?.openId || "local-player",
+          displayName: playerName,
         });
       } else {
-        // Other players join room on server
+        // Other players join room via HTTP
         const alreadyIn = state.players.find(
           (p) => p.userId === (user?.openId || "local-player")
         );
         if (!alreadyIn && state.players.length < 4) {
-          socket.joinRoom(roomId, { name: playerName, avatar: "" }).then((result) => {
-            if (result.success && result.seat !== undefined) {
+          trpc.room.join.useMutation({
+            onSuccess: () => {
               dispatch({
                 type: "ADD_PLAYER",
-                player: { ...playerData, seat: result.seat, odColor: SEAT_COLORS[result.seat] },
+                player: { ...playerData, seat: state.players.length as Seat, odColor: SEAT_COLORS[state.players.length] },
               });
-            }
+            },
+            onError: (error: any) => {
+              console.error("Failed to join room:", error);
+            },
+          }).mutate({
+            roomId,
+            playerName: user?.openId || "local-player",
+            displayName: playerName,
           });
         }
       }
     });
   }, [roomId, user]);
 
-  // Listen for room state updates from server
+  // Listen for room state updates via HTTP polling
   useEffect(() => {
-    if (!roomId) return;
-    return socket.onRoomState((serverState) => {
-      // Sync server state to local state
-      dispatch({ type: "CREATE_ROOM", roomId });
-      
-      // Check for new players joining
-      const newPlayerCount = serverState.players.length;
-      if (newPlayerCount > previousPlayerCountRef.current) {
-        // Find the new player
-        const newPlayer = serverState.players.find((p) => {
-          const alreadyIn = state.players.find((existing) => existing.userId === p.userId);
-          return !alreadyIn;
-        });
-        if (newPlayer) {
-          setJoinNotification(`${newPlayer.name} joined the game!`);
-          setTimeout(() => setJoinNotification(null), 3000);
-        }
-      }
-      previousPlayerCountRef.current = newPlayerCount;
-      
-      // Add new players to local state
-      serverState.players.forEach((player) => {
-        const alreadyIn = state.players.find((p) => p.userId === player.userId);
-        if (!alreadyIn) {
-          dispatch({ type: "ADD_PLAYER", player });
-        }
-      });
-    });
-  }, [roomId, state.players]);
+    if (!roomState) return;
 
-  // Listen for game state updates from server
+    // Check for new players joining
+    const newPlayerCount = roomState.players.length;
+    if (newPlayerCount > previousPlayerCountRef.current) {
+      // Find the new player
+      const newPlayer = roomState.players.find((p) => {
+        const alreadyIn = state.players.find((existing) => existing.name === p.displayName);
+        return !alreadyIn;
+      });
+      if (newPlayer) {
+        setJoinNotification(`${newPlayer.displayName} joined the game!`);
+        setTimeout(() => setJoinNotification(null), 3000);
+      }
+    }
+    previousPlayerCountRef.current = newPlayerCount;
+  }, [roomState, state.players]);
+
+  // Listen for game state updates from server (keep WebSocket for game state)
   useEffect(() => {
     if (!roomId) return;
     return socket.onGameState((serverState) => {
@@ -139,7 +144,7 @@ export default function LobbyScreen() {
         }, 150);
       }
     });
-  }, [roomId]);
+  }, [roomId, socket]);
 
 
   const mySeat = state.players.find(

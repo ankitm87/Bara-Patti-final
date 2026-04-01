@@ -377,5 +377,8 @@
 - [x] Verify room state is being broadcast when players join
 - [x] Create HTTP polling API endpoints for room state
 - [x] Create use-room-polling hook for client-side polling
-- [ ] Update lobby screen to use HTTP polling
+- [x] Update lobby screen to use HTTP polling
+- [x] Set EXPO_PUBLIC_API_URL environment variable to Manus backend URL
+- [x] Rebuild dist folder with API URL
+- [ ] Push to GitHub and deploy to Vercel
 - [ ] Test player join notifications with 2 real players on Vercel
