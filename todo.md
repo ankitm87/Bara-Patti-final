@@ -390,3 +390,12 @@
 - [x] Validate room code format before joining
 - [x] Show error toast/alert with helpful message
 - [x] Add loading state while validating room code
+
+
+## V41 Room Code Timer & Persistence
+
+- [x] Debug: Room created with code GRH7DC shows "room not found" when another player tries to join - Fixed by adding room expiration timer and cleanup
+- [x] Implement 5-minute expiration timer for room codes
+- [x] Add UI to show remaining time before room code expires
+- [x] Auto-close room after 5 minutes if no players joined
+- [x] Show countdown timer in lobby screen

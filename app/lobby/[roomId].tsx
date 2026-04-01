@@ -33,6 +33,7 @@ export default function LobbyScreen() {
   const { state, dispatch } = useGame();
   const [isReady, setIsReady] = useState(false);
   const [joinNotification, setJoinNotification] = useState<string | null>(null);
+  const [roomExpirationTime, setRoomExpirationTime] = useState<number | null>(null);
   const hasNavigated = useRef(false);
   const previousPlayerCountRef = useRef(0);
   const apiUrl = process.env.EXPO_PUBLIC_API_URL || "http://localhost:3000";
@@ -139,6 +140,27 @@ export default function LobbyScreen() {
     }
     previousPlayerCountRef.current = newPlayerCount;
   }, [roomState, state.players]);
+
+  // Poll room expiration time
+  useEffect(() => {
+    if (!roomId) return;
+    
+    const interval = setInterval(async () => {
+      try {
+        const apiUrl = process.env.EXPO_PUBLIC_API_URL || "http://localhost:3000";
+        const response = await fetch(`${apiUrl}/api/trpc/room.getExpirationTime?input=${encodeURIComponent(JSON.stringify({ roomId }))}`);
+        if (response.ok) {
+          const data = await response.json();
+          const remainingMs = data.result?.data?.remainingMs;
+          setRoomExpirationTime(remainingMs);
+        }
+      } catch (err) {
+        console.error("Failed to fetch room expiration time:", err);
+      }
+    }, 5000); // Poll every 5 seconds
+    
+    return () => clearInterval(interval);
+  }, [roomId]);
 
   // Listen for game state updates from server (keep WebSocket for game state)
   useEffect(() => {
@@ -277,6 +299,11 @@ export default function LobbyScreen() {
           <View style={styles.headerCenter}>
             <Text style={styles.headerTitle}>Game Lobby</Text>
             <Text style={styles.roomCode}>Room: {roomId}</Text>
+            {roomExpirationTime !== null && (
+              <Text style={styles.expirationTimer}>
+                Expires in: {Math.ceil(roomExpirationTime / 1000)}s
+              </Text>
+            )}
           </View>
           <TouchableOpacity
             onPress={handleShareWhatsApp}
@@ -488,6 +515,12 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: "#FFD700",
     fontWeight: "600",
+  },
+  expirationTimer: {
+    fontSize: 12,
+    color: "#FF6B6B",
+    fontWeight: "500",
+    marginTop: 4,
   },
   shareBtn: {
     width: 40,

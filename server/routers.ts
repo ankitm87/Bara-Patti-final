@@ -27,6 +27,14 @@ export const appRouter = router({
         return db.getRoomState(input.roomId);
       }),
 
+    /** Get room expiration time in milliseconds */
+    getExpirationTime: publicProcedure
+      .input(z.object({ roomId: z.string() }))
+      .query(({ input }) => {
+        const remainingMs = db.getRoomExpirationTime(input.roomId);
+        return { remainingMs, expiresAt: remainingMs ? new Date(Date.now() + remainingMs) : null };
+      }),
+
     /** Join a room (HTTP alternative to socket) */
     join: publicProcedure
       .input(z.object({

@@ -214,9 +214,43 @@ export async function getRecentGames(groupName?: string, limit = 20) {
 // In-memory room state storage (for development/testing)
 // In production, this should be stored in a database or Redis
 const roomStates = new Map<string, any>();
+const roomExpirationTimers = new Map<string, ReturnType<typeof setTimeout>>();
+const ROOM_EXPIRATION_TIME = 5 * 60 * 1000; // 5 minutes in milliseconds
+
+// Clean up expired rooms periodically
+setInterval(() => {
+  const now = new Date();
+  for (const [roomId, room] of roomStates.entries()) {
+    const createdAt = new Date(room.createdAt);
+    const age = now.getTime() - createdAt.getTime();
+    if (age > ROOM_EXPIRATION_TIME) {
+      roomStates.delete(roomId);
+      const timer = roomExpirationTimers.get(roomId);
+      if (timer) clearTimeout(timer);
+      roomExpirationTimers.delete(roomId);
+      console.log(`[db] Room expired and deleted: ${roomId}`);
+    }
+  }
+}, 30000); // Check every 30 seconds
 
 export function getRoomState(roomId: string) {
-  return roomStates.get(roomId) || { players: [], status: "waiting" };
+  const room = roomStates.get(roomId);
+  if (!room) {
+    return null;
+  }
+  
+  // Check if room has expired
+  const createdAt = new Date(room.createdAt);
+  const age = new Date().getTime() - createdAt.getTime();
+  if (age > ROOM_EXPIRATION_TIME) {
+    roomStates.delete(roomId);
+    const timer = roomExpirationTimers.get(roomId);
+    if (timer) clearTimeout(timer);
+    roomExpirationTimers.delete(roomId);
+    return null;
+  }
+  
+  return room;
 }
 
 export function createRoom(roomId: string, playerName: string, displayName: string) {
@@ -225,8 +259,21 @@ export function createRoom(roomId: string, playerName: string, displayName: stri
     players: [{ playerName, displayName, seat: 0 }],
     status: "waiting",
     createdAt: new Date(),
+    expiresAt: new Date(Date.now() + ROOM_EXPIRATION_TIME),
   };
   roomStates.set(roomId, room);
+  
+  // Set expiration timer
+  const existingTimer = roomExpirationTimers.get(roomId);
+  if (existingTimer) clearTimeout(existingTimer);
+  
+  const timer = setTimeout(() => {
+    roomStates.delete(roomId);
+    roomExpirationTimers.delete(roomId);
+    console.log(`[db] Room expired: ${roomId}`);
+  }, ROOM_EXPIRATION_TIME);
+  
+  roomExpirationTimers.set(roomId, timer);
   return room;
 }
 
@@ -247,4 +294,15 @@ export function addPlayerToRoom(roomId: string, playerName: string, displayName:
   room.players.push({ playerName, displayName, seat: nextSeat });
   roomStates.set(roomId, room);
   return room;
+}
+
+export function getRoomExpirationTime(roomId: string): number | null {
+  const room = roomStates.get(roomId);
+  if (!room) return null;
+  
+  const expiresAt = new Date(room.expiresAt);
+  const now = new Date();
+  const remainingMs = expiresAt.getTime() - now.getTime();
+  
+  return Math.max(0, remainingMs);
 }
