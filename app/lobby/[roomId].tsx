@@ -38,6 +38,10 @@ export default function LobbyScreen() {
   const apiUrl = process.env.EXPO_PUBLIC_API_URL || "http://localhost:3000";
   const socket = useSocket(apiUrl);
   const roomState = useRoomPolling(roomId, 1000); // Poll every 1 second
+  
+  // Move mutations to component level (fix hook error)
+  const createRoomMutation = trpc.room.create.useMutation();
+  const joinRoomMutation = trpc.room.join.useMutation();
 
   // Initialize room with current player and sync with server
   useEffect(() => {
@@ -69,42 +73,48 @@ export default function LobbyScreen() {
       const isFirstPlayer = state.players.length === 0;
       if (isFirstPlayer) {
         // First player creates room via HTTP
-        trpc.room.create.useMutation({
-          onSuccess: () => {
-            dispatch({
-              type: "ADD_PLAYER",
-              player: { ...playerData, seat: 0 as Seat, odColor: SEAT_COLORS[0] },
-            });
+        createRoomMutation.mutate(
+          {
+            roomId,
+            playerName: user?.openId || "local-player",
+            displayName: playerName,
           },
-          onError: (error: any) => {
-            console.error("Failed to create room:", error);
-          },
-        }).mutate({
-          roomId,
-          playerName: user?.openId || "local-player",
-          displayName: playerName,
-        });
+          {
+            onSuccess: () => {
+              dispatch({
+                type: "ADD_PLAYER",
+                player: { ...playerData, seat: 0 as Seat, odColor: SEAT_COLORS[0] },
+              });
+            },
+            onError: (error: any) => {
+              console.error("Failed to create room:", error);
+            },
+          }
+        );
       } else {
         // Other players join room via HTTP
         const alreadyIn = state.players.find(
           (p) => p.userId === (user?.openId || "local-player")
         );
         if (!alreadyIn && state.players.length < 4) {
-          trpc.room.join.useMutation({
-            onSuccess: () => {
-              dispatch({
-                type: "ADD_PLAYER",
-                player: { ...playerData, seat: state.players.length as Seat, odColor: SEAT_COLORS[state.players.length] },
-              });
+          joinRoomMutation.mutate(
+            {
+              roomId,
+              playerName: user?.openId || "local-player",
+              displayName: playerName,
             },
-            onError: (error: any) => {
-              console.error("Failed to join room:", error);
-            },
-          }).mutate({
-            roomId,
-            playerName: user?.openId || "local-player",
-            displayName: playerName,
-          });
+            {
+              onSuccess: () => {
+                dispatch({
+                  type: "ADD_PLAYER",
+                  player: { ...playerData, seat: state.players.length as Seat, odColor: SEAT_COLORS[state.players.length] },
+                });
+              },
+              onError: (error: any) => {
+                console.error("Failed to join room:", error);
+              },
+            }
+          );
         }
       }
     });
