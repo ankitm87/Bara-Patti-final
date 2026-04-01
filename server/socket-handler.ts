@@ -1,6 +1,7 @@
 import { Server as SocketIOServer, Socket } from "socket.io";
 import { Server as HTTPServer } from "http";
 import { GameState, PlayerState, Seat, Card, createInitialGameState, startNewRound, Trio } from "../lib/game-engine";
+import * as db from "./db";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -44,6 +45,9 @@ export function initializeSocketIO(httpServer: HTTPServer) {
       room.players.set(socket.id, { ...data.player, seat: 0 as Seat });
       room.gameState.players = Array.from(room.players.values());
 
+      // Also sync to HTTP storage for polling
+      db.createRoom(data.roomId, data.player.userId, data.player.odName || data.player.name);
+
       console.log(`[socket] Room created: ${data.roomId} by ${socket.id}`);
       callback({ success: true, roomId: data.roomId });
       io.to(data.roomId).emit("room-state", room.gameState);
@@ -70,6 +74,9 @@ export function initializeSocketIO(httpServer: HTTPServer) {
 
       room.players.set(socket.id, { ...data.player, seat: assignedSeat });
       room.gameState.players = Array.from(room.players.values());
+
+      // Also sync to HTTP storage
+      db.addPlayerToRoom(data.roomId, data.player.userId, data.player.odName || data.player.name);
 
       console.log(`[socket] Player joined room ${data.roomId}: ${socket.id} as seat ${assignedSeat}`);
       callback({ success: true, seat: assignedSeat });
