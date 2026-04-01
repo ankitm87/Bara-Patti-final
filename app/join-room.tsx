@@ -19,6 +19,7 @@ export default function JoinRoomScreen() {
   const [error, setError] = useState("");
   const [showNameModal, setShowNameModal] = useState(false);
   const [playerName, setPlayerName] = useState<string | null>(null);
+  const [isValidating, setIsValidating] = useState(false);
   const inputRef = useRef<TextInput>(null);
   const pendingCodeRef = useRef<string>("");
 
@@ -28,14 +29,42 @@ export default function JoinRoomScreen() {
     setError("");
   };
 
-  const handleJoin = () => {
+  const handleJoin = async () => {
     if (code.length !== 6) {
       setError("Please enter a 6-character code");
       return;
     }
-    // Store code and show name modal
-    pendingCodeRef.current = code;
-    setShowNameModal(true);
+    
+    // Validate room exists on server
+    setIsValidating(true);
+    try {
+      setError("");
+      // Use fetch to validate room exists
+      const apiUrl = process.env.EXPO_PUBLIC_API_URL || "http://localhost:3000";
+      const response = await fetch(`${apiUrl}/api/trpc/room.getState?input=${encodeURIComponent(JSON.stringify({ roomId: code }))}`);
+      
+      if (!response.ok) {
+        setError("Room not found. Please check the code.");
+        setIsValidating(false);
+        return;
+      }
+      
+      const data = await response.json();
+      if (!data.result?.data) {
+        setError("Room not found. Please check the code.");
+        setIsValidating(false);
+        return;
+      }
+      
+      // Store code and show name modal
+      pendingCodeRef.current = code;
+      setShowNameModal(true);
+    } catch (err: any) {
+      setError("Invalid room code. Please try again.");
+      console.error("Room validation error:", err);
+    } finally {
+      setIsValidating(false);
+    }
   };
 
   const handleNameSubmit = async (name: string) => {
@@ -109,13 +138,15 @@ export default function JoinRoomScreen() {
           <TouchableOpacity
             style={[
               styles.joinButton,
-              code.length < 6 && styles.joinButtonDisabled,
+              (code.length < 6 || isValidating) && styles.joinButtonDisabled,
             ]}
             onPress={handleJoin}
             activeOpacity={0.8}
-            disabled={code.length < 6}
+            disabled={code.length < 6 || isValidating}
           >
-            <Text style={styles.joinButtonText}>Join Game</Text>
+            <Text style={styles.joinButtonText}>
+              {isValidating ? "Validating..." : "Join Game"}
+            </Text>
           </TouchableOpacity>
         </View>
       </View>

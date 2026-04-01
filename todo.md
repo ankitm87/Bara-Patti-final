@@ -382,3 +382,11 @@
 - [x] Rebuild dist folder with API URL
 - [ ] Push to GitHub and deploy to Vercel
 - [ ] Test player join notifications with 2 real players on Vercel
+
+
+## V40 Room Code Validation
+
+- [x] Add error message when user enters invalid room code
+- [x] Validate room code format before joining
+- [x] Show error toast/alert with helpful message
+- [x] Add loading state while validating room code
