@@ -19,6 +19,37 @@ export const appRouter = router({
     }),
   }),
 
+  room: router({
+    /** Get current room state for polling */
+    getState: publicProcedure
+      .input(z.object({ roomId: z.string() }))
+      .query(({ input }) => {
+        return db.getRoomState(input.roomId);
+      }),
+
+    /** Join a room (HTTP alternative to socket) */
+    join: publicProcedure
+      .input(z.object({
+        roomId: z.string(),
+        playerName: z.string(),
+        displayName: z.string(),
+      }))
+      .mutation(({ input }) => {
+        return db.addPlayerToRoom(input.roomId, input.playerName, input.displayName);
+      }),
+
+    /** Create a new room (HTTP alternative to socket) */
+    create: publicProcedure
+      .input(z.object({
+        roomId: z.string(),
+        playerName: z.string(),
+        displayName: z.string(),
+      }))
+      .mutation(({ input }) => {
+        return db.createRoom(input.roomId, input.playerName, input.displayName);
+      }),
+  }),
+
   leaderboard: router({
     /** Get aggregated leaderboard, optionally filtered by group */
     getLeaderboard: publicProcedure

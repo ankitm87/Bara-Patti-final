@@ -207,3 +207,44 @@ export async function getRecentGames(groupName?: string, limit = 20) {
 
   return Array.from(sessions.values());
 }
+
+
+// ─── Room State Management (for HTTP polling) ─────────────────────────────────
+
+// In-memory room state storage (for development/testing)
+// In production, this should be stored in a database or Redis
+const roomStates = new Map<string, any>();
+
+export function getRoomState(roomId: string) {
+  return roomStates.get(roomId) || { players: [], status: "waiting" };
+}
+
+export function createRoom(roomId: string, playerName: string, displayName: string) {
+  const room = {
+    roomId,
+    players: [{ playerName, displayName, seat: 0 }],
+    status: "waiting",
+    createdAt: new Date(),
+  };
+  roomStates.set(roomId, room);
+  return room;
+}
+
+export function addPlayerToRoom(roomId: string, playerName: string, displayName: string) {
+  const room = roomStates.get(roomId);
+  if (!room) {
+    throw new Error("Room not found");
+  }
+
+  // Check if player already exists
+  const existingPlayer = room.players.find((p: any) => p.playerName === playerName);
+  if (existingPlayer) {
+    return room;
+  }
+
+  // Add new player with next available seat
+  const nextSeat = room.players.length;
+  room.players.push({ playerName, displayName, seat: nextSeat });
+  roomStates.set(roomId, room);
+  return room;
+}

@@ -368,3 +368,14 @@
 - [x] Implement real-time player join notifications in lobby - when a player joins, show notification to game creator
 - [x] Fix player join detection - ank_it joined but a.maheshwari87 doesn't see the join notification
 - [x] Enable 2 real players + 2 bots game mode - allow starting game with mixed real and bot players
+
+
+## V37 WebSocket Connection Fix
+
+- [x] Fix WebSocket connection URL on Vercel - EXPO_PUBLIC_API_URL not being used
+- [x] Debug why player join event isn't being received by server
+- [x] Verify room state is being broadcast when players join
+- [x] Create HTTP polling API endpoints for room state
+- [x] Create use-room-polling hook for client-side polling
+- [ ] Update lobby screen to use HTTP polling
+- [ ] Test player join notifications with 2 real players on Vercel
