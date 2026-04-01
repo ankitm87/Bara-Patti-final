@@ -253,7 +253,12 @@ export default function LobbyScreen() {
   }
 
   const handleShareWhatsApp = () => {
-    const message = `Join my Bara Patti game! \u{1F0CF}\n\nRoom Code: ${roomId}\n\nOpen the Bara Patti app and enter this code to join.`;
+    // Get the app URL (use production URL for web, deep link for mobile)
+    const appUrl = Platform.OS === 'web' 
+      ? `https://bara-patti-final.vercel.app/join-room?code=${roomId}`
+      : `exps://8081-i1hq9k0nmag39oyzsn0mb-dd1926b8.sg1.manus.computer/join-room?code=${roomId}`;
+    
+    const message = `Join my Bara Patti game! 🃏\n\n🔗 Quick Join: ${appUrl}\n\nOr enter code: ${roomId}`;
     const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(message)}`;
     Linking.openURL(whatsappUrl);
   };

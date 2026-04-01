@@ -399,3 +399,12 @@
 - [x] Add UI to show remaining time before room code expires
 - [x] Auto-close room after 5 minutes if no players joined
 - [x] Show countdown timer in lobby screen
+
+
+## V42 Direct Join URL & Room Join Debugging
+
+- [x] Debug: Unable to join room when inputting code manually - Fixed room validation response parsing
+- [x] Add direct join URL to WhatsApp message with deep link support
+- [x] Support joining via URL parameters (e.g., /join-room?code=ABC123)
+- [x] Auto-join when accessing via direct URL link
+- [x] Verify room validation is working correctly

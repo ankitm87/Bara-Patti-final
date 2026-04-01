@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import {
   View,
   Text,
@@ -12,10 +12,12 @@ import { ScreenContainer } from "@/components/screen-container";
 import { PlayerNameModal } from "@/components/player-name-modal";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useLocalSearchParams } from "expo-router";
 
 export default function JoinRoomScreen() {
   const router = useRouter();
-  const [code, setCode] = useState("");
+  const params = useLocalSearchParams<{ code?: string }>();
+  const [code, setCode] = useState(params.code || "");
   const [error, setError] = useState("");
   const [showNameModal, setShowNameModal] = useState(false);
   const [playerName, setPlayerName] = useState<string | null>(null);
@@ -23,25 +25,39 @@ export default function JoinRoomScreen() {
   const inputRef = useRef<TextInput>(null);
   const pendingCodeRef = useRef<string>("");
 
+  // Auto-join if code is provided via URL parameter
+  useEffect(() => {
+    if (params.code && params.code.length === 6) {
+      setCode(params.code);
+      pendingCodeRef.current = params.code;
+      // Auto-trigger join after a short delay
+      setTimeout(() => {
+        handleJoinWithCode(params.code!);
+      }, 500);
+    }
+  }, [params.code]);
+
   const handleCodeChange = (text: string) => {
     const cleaned = text.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 6);
     setCode(cleaned);
     setError("");
   };
 
-  const handleJoin = async () => {
-    if (code.length !== 6) {
-      setError("Please enter a 6-character code");
+  const handleJoinWithCode = async (joinCode: string | undefined) => {
+    if (!joinCode) {
+      setError("No code provided");
+      return;
+    }
+    if (joinCode.length !== 6) {
+      setError("Invalid code format");
       return;
     }
     
-    // Validate room exists on server
     setIsValidating(true);
     try {
       setError("");
-      // Use fetch to validate room exists
       const apiUrl = process.env.EXPO_PUBLIC_API_URL || "http://localhost:3000";
-      const response = await fetch(`${apiUrl}/api/trpc/room.getState?input=${encodeURIComponent(JSON.stringify({ roomId: code }))}`);
+      const response = await fetch(`${apiUrl}/api/trpc/room.getState?input=${encodeURIComponent(JSON.stringify({ roomId: joinCode }))}`);
       
       if (!response.ok) {
         setError("Room not found. Please check the code.");
@@ -50,14 +66,14 @@ export default function JoinRoomScreen() {
       }
       
       const data = await response.json();
-      if (!data.result?.data) {
+      const roomData = data.result?.data || data.result || data;
+      if (!roomData || !roomData.roomId) {
         setError("Room not found. Please check the code.");
         setIsValidating(false);
         return;
       }
       
-      // Store code and show name modal
-      pendingCodeRef.current = code;
+      pendingCodeRef.current = joinCode;
       setShowNameModal(true);
     } catch (err: any) {
       setError("Invalid room code. Please try again.");
@@ -65,6 +81,10 @@ export default function JoinRoomScreen() {
     } finally {
       setIsValidating(false);
     }
+  };
+
+  const handleJoin = async () => {
+    handleJoinWithCode(code);
   };
 
   const handleNameSubmit = async (name: string) => {
