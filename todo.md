@@ -408,3 +408,11 @@
 - [x] Support joining via URL parameters (e.g., /join-room?code=ABC123)
 - [x] Auto-join when accessing via direct URL link
 - [x] Verify room validation is working correctly
+
+
+## V44 Manual Join & WhatsApp Direct Link
+
+- [x] Debug: Manual room join - fixed room validation endpoint parsing
+- [x] Update WhatsApp message to include direct join link (one-click)
+- [x] Remove code-only message and replace with clickable URL
+- [x] Add better error logging for debugging

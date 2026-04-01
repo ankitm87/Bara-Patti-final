@@ -57,27 +57,37 @@ export default function JoinRoomScreen() {
     try {
       setError("");
       const apiUrl = process.env.EXPO_PUBLIC_API_URL || "http://localhost:3000";
-      const response = await fetch(`${apiUrl}/api/trpc/room.getState?input=${encodeURIComponent(JSON.stringify({ roomId: joinCode }))}`);
+      
+      const input = { roomId: joinCode };
+      const response = await fetch(`${apiUrl}/api/trpc/room.getState?input=${encodeURIComponent(JSON.stringify(input))}`, {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' }
+      });
       
       if (!response.ok) {
+        console.error(`[join-room] HTTP error: ${response.status}`);
         setError("Room not found. Please check the code.");
         setIsValidating(false);
         return;
       }
       
       const data = await response.json();
-      const roomData = data.result?.data || data.result || data;
+      console.log("[join-room] Room validation response:", data);
+      
+      const roomData = data.result?.data;
       if (!roomData || !roomData.roomId) {
+        console.error("[join-room] No room data in response:", data);
         setError("Room not found. Please check the code.");
         setIsValidating(false);
         return;
       }
       
+      console.log("[join-room] Room found:", roomData.roomId);
       pendingCodeRef.current = joinCode;
       setShowNameModal(true);
     } catch (err: any) {
-      setError("Invalid room code. Please try again.");
-      console.error("Room validation error:", err);
+      console.error("[join-room] Room validation error:", err);
+      setError("Connection error. Please try again.");
     } finally {
       setIsValidating(false);
     }

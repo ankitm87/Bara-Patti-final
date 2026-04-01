@@ -258,7 +258,7 @@ export default function LobbyScreen() {
       ? `https://bara-patti-final.vercel.app/join-room?code=${roomId}`
       : `exps://8081-i1hq9k0nmag39oyzsn0mb-dd1926b8.sg1.manus.computer/join-room?code=${roomId}`;
     
-    const message = `Join my Bara Patti game! 🃏\n\n🔗 Quick Join: ${appUrl}\n\nOr enter code: ${roomId}`;
+    const message = `Join my Bara Patti game! 🃏\n\n${appUrl}`;
     const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(message)}`;
     Linking.openURL(whatsappUrl);
   };
