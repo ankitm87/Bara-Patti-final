@@ -58,8 +58,8 @@ export default function JoinRoomScreen() {
       setError("");
       const apiUrl = process.env.EXPO_PUBLIC_API_URL || "http://localhost:3000";
       
-      // Use proper tRPC query format: /api/trpc/room.getState?input=<JSON>
-      const input = { roomId: joinCode };
+      // Use tRPC GET query format with proper input structure
+      const input = { json: { roomId: joinCode } };
       const encodedInput = encodeURIComponent(JSON.stringify(input));
       const response = await fetch(`${apiUrl}/api/trpc/room.getState?input=${encodedInput}`, {
         method: 'GET',
