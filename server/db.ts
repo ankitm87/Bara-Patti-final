@@ -234,10 +234,14 @@ setInterval(() => {
 }, 30000); // Check every 30 seconds
 
 export function getRoomState(roomId: string) {
+  console.log(`[db] getRoomState called for roomId: ${roomId}`);
+  console.log(`[db] Available rooms: ${Array.from(roomStates.keys()).join(', ')}`);
   const room = roomStates.get(roomId);
   if (!room) {
+    console.log(`[db] Room not found: ${roomId}`);
     return null;
   }
+  console.log(`[db] Room found: ${roomId}`);
   
   // Check if room has expired
   const createdAt = new Date(room.createdAt);
