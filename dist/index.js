@@ -262,7 +262,7 @@ function getRoomState(roomId) {
     console.log(`[db] Room not found: ${roomId}`);
     return null;
   }
-  console.log(`[db] Room found: ${roomId}`);
+  console.log(`[db] Room found: ${roomId}, players: ${room.players.map((p) => p.displayName).join(", ")}`);
   const createdAt = new Date(room.createdAt);
   const age = (/* @__PURE__ */ new Date()).getTime() - createdAt.getTime();
   if (age > ROOM_EXPIRATION_TIME) {
@@ -283,6 +283,7 @@ function createRoom(roomId, playerName, displayName) {
     expiresAt: new Date(Date.now() + ROOM_EXPIRATION_TIME)
   };
   roomStates.set(roomId, room);
+  console.log(`[db] Room created: ${roomId} by ${displayName}. Total rooms: ${roomStates.size}`);
   const existingTimer = roomExpirationTimers.get(roomId);
   if (existingTimer) clearTimeout(existingTimer);
   const timer = setTimeout(() => {
@@ -305,6 +306,7 @@ function addPlayerToRoom(roomId, playerName, displayName) {
   const nextSeat = room.players.length;
   room.players.push({ playerName, displayName, seat: nextSeat });
   roomStates.set(roomId, room);
+  console.log(`[db] Player ${playerName} added to room ${roomId}. Total players: ${room.players.length}`);
   return room;
 }
 function getRoomExpirationTime(roomId) {

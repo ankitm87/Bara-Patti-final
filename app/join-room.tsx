@@ -13,6 +13,7 @@ import { PlayerNameModal } from "@/components/player-name-modal";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useLocalSearchParams } from "expo-router";
+import { trpc } from "@/lib/trpc";
 
 export default function JoinRoomScreen() {
   const router = useRouter();
@@ -24,6 +25,7 @@ export default function JoinRoomScreen() {
   const [isValidating, setIsValidating] = useState(false);
   const inputRef = useRef<TextInput>(null);
   const pendingCodeRef = useRef<string>("");
+  const queryClient = trpc.useContext();
 
   // Auto-join if code is provided via URL parameter
   useEffect(() => {
@@ -56,40 +58,23 @@ export default function JoinRoomScreen() {
     setIsValidating(true);
     try {
       setError("");
-      const apiUrl = process.env.EXPO_PUBLIC_API_URL || "http://localhost:3000";
       
-      // Use tRPC GET query format with proper input structure
-      const input = { json: { roomId: joinCode } };
-      const encodedInput = encodeURIComponent(JSON.stringify(input));
-      const response = await fetch(`${apiUrl}/api/trpc/room.getState?input=${encodedInput}`, {
-        method: 'GET',
-        headers: { 'Content-Type': 'application/json' }
-      });
+      // Use tRPC client to validate room exists (queries use GET automatically)
+      const roomData = await queryClient.client.query("room.getState", { roomId: joinCode });
       
-      if (!response.ok) {
-        console.error(`[join-room] HTTP error: ${response.status}`);
+      if (!roomData || !(roomData as any).roomId) {
+        console.error("[join-room] No room data in response:", roomData);
         setError("Room not found. Please check the code.");
         setIsValidating(false);
         return;
       }
       
-      const data = await response.json();
-      console.log("[join-room] Room validation response:", data);
-      
-      const roomData = data.result?.data;
-      if (!roomData || !roomData.roomId) {
-        console.error("[join-room] No room data in response:", data);
-        setError("Room not found. Please check the code.");
-        setIsValidating(false);
-        return;
-      }
-      
-      console.log("[join-room] Room found:", roomData.roomId);
+      console.log("[join-room] Room found:", (roomData as any).roomId);
       pendingCodeRef.current = joinCode;
       setShowNameModal(true);
     } catch (err: any) {
       console.error("[join-room] Room validation error:", err);
-      setError("Connection error. Please try again.");
+      setError("Room not found. Please check the code.");
     } finally {
       setIsValidating(false);
     }
