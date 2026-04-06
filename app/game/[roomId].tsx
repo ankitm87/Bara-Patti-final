@@ -466,15 +466,6 @@ export default function GameScreen() {
     }
   };
   
-  // Cleanup on unmount
-  useEffect(() => {
-    return () => {
-      if (reconnectTimerRef.current) {
-        clearInterval(reconnectTimerRef.current);
-      }
-    };
-  }, []);
-  
   const handleGiveUp = () => {
     console.log("[game] Player gave up on reconnection");
     if (reconnectTimerRef.current) clearInterval(reconnectTimerRef.current);
