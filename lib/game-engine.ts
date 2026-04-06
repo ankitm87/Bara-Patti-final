@@ -271,11 +271,7 @@ export function getValidCards(
         );
         if (higherTrumps.length > 0) return higherTrumps;
       }
-      // Has trump but no higher trump — can play non-trump cards (save your trumps)
-      // But cannot play lower trump cards
-      const nonTrumpCards = hand.filter((c) => c.suit !== trumpSuit);
-      if (nonTrumpCards.length > 0) return nonTrumpCards;
-      // If no non-trump cards, must play trump (even if lower)
+      // Has trump but no higher trump — must play ANY trump (even if lower)
       return trumpCards;
     }
     // No trump played yet — must cut with any trump
