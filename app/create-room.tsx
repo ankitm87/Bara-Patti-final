@@ -15,6 +15,7 @@ import { generateRoomCode } from "@/lib/game-engine";
 import * as Linking from "expo-linking";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { trpc } from "@/lib/trpc";
 
 export default function CreateRoomScreen() {
   const router = useRouter();
@@ -24,11 +25,32 @@ export default function CreateRoomScreen() {
   const [copied, setCopied] = useState(false);
   const [playersJoined, setPlayersJoined] = useState(1);
   const [groupName, setGroupName] = useState("Family");
+  const createRoomMutation = trpc.room.create.useMutation();
 
   useEffect(() => {
     const code = generateRoomCode();
     setRoomCode(code);
     dispatch({ type: "CREATE_ROOM", roomId: code });
+    
+    // Create room on server via HTTP API
+    const playerName = user?.openId || "local-player";
+    const displayName = user?.name || user?.email?.split("@")[0] || "Player";
+    createRoomMutation.mutate(
+      {
+        roomId: code,
+        playerName,
+        displayName,
+      },
+      {
+        onSuccess: () => {
+          console.log("[create-room] Room created on server:", code);
+        },
+        onError: (error) => {
+          console.error("[create-room] Failed to create room on server:", error);
+        },
+      }
+    );
+    
     // Load saved group name
     AsyncStorage.getItem("bara-patti-group-name").then((name) => {
       if (name) setGroupName(name);
@@ -53,13 +75,19 @@ export default function CreateRoomScreen() {
   };
 
   const handleShareWhatsApp = () => {
-    const message = `Join my Bara Patti game! 🃏\n\nRoom Code: ${roomCode}\nGroup: ${groupName}\n\nOpen the Bara Patti app and enter this code to join.`;
+    // Generate join URL for direct joining
+    const appBaseUrl = Platform.OS === "web" ? window.location.origin : "exp://";
+    const joinUrl = `${appBaseUrl}/join-room?code=${roomCode}`;
+    const message = `Join my Bara Patti game! 🃏\n\nClick here to join: ${joinUrl}\n\nOr enter code: ${roomCode}\nGroup: ${groupName}`;
     const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(message)}`;
     Linking.openURL(whatsappUrl);
   };
 
   const handleShare = () => {
-    const message = `Join my Bara Patti game! Room Code: ${roomCode}`;
+    // Generate join URL for direct joining
+    const appBaseUrl = Platform.OS === "web" ? window.location.origin : "exp://";
+    const joinUrl = `${appBaseUrl}/join-room?code=${roomCode}`;
+    const message = `Join my Bara Patti game! Click here: ${joinUrl}`;
     if (Platform.OS === "web" && typeof navigator !== "undefined" && navigator.share) {
       navigator.share({ title: "Bara Patti Game", text: message });
     } else {
@@ -214,6 +242,7 @@ export default function CreateRoomScreen() {
             style={styles.devButton}
             onPress={() => {
               setPlayersJoined(4);
+              router.replace(`/lobby/${roomCode}` as any);
             }}
             activeOpacity={0.7}
           >
