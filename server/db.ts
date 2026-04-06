@@ -246,7 +246,9 @@ export function getRoomState(roomId: string) {
   // Check if room has expired
   const createdAt = new Date(room.createdAt);
   const age = new Date().getTime() - createdAt.getTime();
+  console.log(`[db] Room age: ${age}ms, expiration time: ${ROOM_EXPIRATION_TIME}ms`);
   if (age > ROOM_EXPIRATION_TIME) {
+    console.log(`[db] Room expired: ${roomId}`);
     roomStates.delete(roomId);
     const timer = roomExpirationTimers.get(roomId);
     if (timer) clearTimeout(timer);

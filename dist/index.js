@@ -265,7 +265,9 @@ function getRoomState(roomId) {
   console.log(`[db] Room found: ${roomId}, players: ${room.players.map((p) => p.displayName).join(", ")}`);
   const createdAt = new Date(room.createdAt);
   const age = (/* @__PURE__ */ new Date()).getTime() - createdAt.getTime();
+  console.log(`[db] Room age: ${age}ms, expiration time: ${ROOM_EXPIRATION_TIME}ms`);
   if (age > ROOM_EXPIRATION_TIME) {
+    console.log(`[db] Room expired: ${roomId}`);
     roomStates.delete(roomId);
     const timer = roomExpirationTimers.get(roomId);
     if (timer) clearTimeout(timer);
