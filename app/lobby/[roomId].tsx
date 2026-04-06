@@ -121,25 +121,47 @@ export default function LobbyScreen() {
     });
   }, [roomId, user]);
 
-  // Listen for room state updates via HTTP polling
+  // Listen for room state updates via HTTP polling and sync to local state
   useEffect(() => {
     if (!roomState) return;
 
-    // Check for new players joining
-    const newPlayerCount = roomState.players.length;
-    if (newPlayerCount > previousPlayerCountRef.current) {
-      // Find the new player
-      const newPlayer = roomState.players.find((p) => {
-        const alreadyIn = state.players.find((existing) => existing.name === p.displayName);
-        return !alreadyIn;
-      });
-      if (newPlayer) {
-        setJoinNotification(`${newPlayer.displayName} joined the game!`);
-        setTimeout(() => setJoinNotification(null), 3000);
+    // Sync server room state to local game context
+    roomState.players.forEach((serverPlayer) => {
+      const existingPlayer = state.players.find(
+        (p) => p.userId === serverPlayer.playerName || p.name === serverPlayer.displayName
+      );
+      
+      if (!existingPlayer) {
+        // New player joined - add to local state
+        const nextSeat = state.players.length;
+        if (nextSeat < 4) {
+          dispatch({
+            type: "ADD_PLAYER",
+            player: {
+              seat: nextSeat as Seat,
+              name: serverPlayer.displayName,
+              odId: serverPlayer.playerName,
+              odName: serverPlayer.displayName,
+              odEmail: "",
+              odAvatar: "",
+              odInitials: serverPlayer.displayName[0].toUpperCase(),
+              odColor: SEAT_COLORS[nextSeat],
+              userId: serverPlayer.playerName,
+              hand: [],
+              handsWon: 0,
+              isReady: false,
+              hasDeclinedTrio: false,
+            },
+          });
+          
+          // Show join notification
+          setJoinNotification(`${serverPlayer.displayName} joined the game!`);
+          setTimeout(() => setJoinNotification(null), 3000);
+          console.log(`[lobby] Player joined: ${serverPlayer.displayName}`);
+        }
       }
-    }
-    previousPlayerCountRef.current = newPlayerCount;
-  }, [roomState, state.players]);
+    });
+  }, [roomState?.players?.length]);
 
   // Poll room expiration time
   useEffect(() => {
@@ -224,10 +246,13 @@ export default function LobbyScreen() {
     }
   };
 
-  // Compute ready state
+  // Compute ready state - check if we have 4 players (real + AI)
   const playerCount = state.players.length;
   const readyCount = state.players.filter((p) => p.isReady).length;
   const allReady = playerCount === 4 && readyCount === 4;
+  
+  // Also consider auto-ready for AI players when joining
+  const hasEnoughPlayers = playerCount >= 4;
 
   // Navigate to game when all ready
   const startGame = () => {
@@ -239,17 +264,21 @@ export default function LobbyScreen() {
     }, 150);
   };
 
-  // Auto-start when all 4 players are ready
+  // Auto-start when all 4 players are ready OR when room creator marks all ready
   useEffect(() => {
     if (allReady && !hasNavigated.current) {
+      console.log("[lobby] All players ready, starting game");
       startGame();
     }
-  }, [allReady]);
+  }, [allReady, hasNavigated]);
 
-  // Also check after every render in case useEffect missed it
+  // Fallback: check after every render in case useEffect missed it
   if (allReady && !hasNavigated.current) {
     // Schedule for next tick to avoid dispatch during render
-    setTimeout(() => startGame(), 0);
+    setTimeout(() => {
+      console.log("[lobby] Fallback: starting game");
+      startGame();
+    }, 0);
   }
 
   const handleShareWhatsApp = () => {

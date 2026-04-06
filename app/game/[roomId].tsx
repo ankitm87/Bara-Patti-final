@@ -49,17 +49,21 @@ import { trpc } from "@/lib/trpc";
 import { hashGameState, getBestLearnedMoves, BotTrainingData, initializeBotTraining } from "@/lib/bot-training";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
+import { ReconnectionHandler } from "@/components/reconnection-handler";
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("window");
 const CARD_WIDTH_MY = 58;
 const CARD_OVERLAP_MY = 30;
 
 export default function GameScreen() {
+  // Add socket event listeners if not already added
+  const socketRef = useRef<any>(null);
   const router = useRouter();
   const { roomId } = useLocalSearchParams<{ roomId: string }>();
   const { user } = useAuth();
   const { state, dispatch } = useGame();
   const { socket } = useSocket(process.env.EXPO_PUBLIC_API_URL || "http://localhost:3000");
+  socketRef.current = socket;
   // selectedCard removed - single tap plays directly
   const [showTrioModal, setShowTrioModal] = useState(false);
   const [showRoundEnd, setShowRoundEnd] = useState(false);
@@ -72,6 +76,12 @@ export default function GameScreen() {
   const { muted, toggleMute, playShuffle, playCardPlay, playMyWin, playOtherWin } = useSound();
   const saveRoundMutation = trpc.leaderboard.saveRound.useMutation();
   const [groupName, setGroupName] = useState("Family");
+  
+  // Reconnection state
+  const [isReconnecting, setIsReconnecting] = useState(false);
+  const [reconnectTimeRemaining, setReconnectTimeRemaining] = useState(60);
+  const reconnectTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const disconnectTimeRef = useRef<number | null>(null);
 
   // Load group name from storage
   useEffect(() => {
@@ -79,6 +89,54 @@ export default function GameScreen() {
       if (name) setGroupName(name);
     });
   }, []);
+  
+  // Monitor socket connection and handle reconnections
+  useEffect(() => {
+    const handleDisconnect = () => {
+      console.log("[game] Socket disconnected");
+      disconnectTimeRef.current = Date.now();
+      setIsReconnecting(true);
+      setReconnectTimeRemaining(60);
+      
+      // Start countdown timer
+      reconnectTimerRef.current = setInterval(() => {
+        setReconnectTimeRemaining((prev) => {
+          if (prev <= 1) {
+            // Time expired - leave game
+            if (reconnectTimerRef.current) clearInterval(reconnectTimerRef.current);
+            router.replace("/" as any);
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+    };
+    
+    const handleConnect = () => {
+      console.log("[game] Socket reconnected");
+      if (reconnectTimerRef.current) {
+        clearInterval(reconnectTimerRef.current);
+        reconnectTimerRef.current = null;
+      }
+      setIsReconnecting(false);
+      disconnectTimeRef.current = null;
+    };
+    
+    // Listen for socket events
+    // Ensure socket has event listeners
+    if (socket && socket.on) {
+      socket.on("disconnect", handleDisconnect);
+      socket.on("connect", handleConnect);
+    }
+    
+    return () => {
+      if (socket && socket.off) {
+        socket.off("disconnect", handleDisconnect);
+        socket.off("connect", handleConnect);
+      }
+      if (reconnectTimerRef.current) clearInterval(reconnectTimerRef.current);
+    };
+  }, [socket, router]);
 
   const mySeat: Seat = 0;
   const myPlayer = state.players.find((p) => p.seat === mySeat);
@@ -401,8 +459,38 @@ export default function GameScreen() {
   const trickCards = state.currentTrick?.cards || [];
   const lastCompletedTrick = state.completedTricks.length > 0 ? state.completedTricks[state.completedTricks.length - 1] : null;
 
+  const handleReconnect = () => {
+    console.log("[game] Attempting to reconnect...");
+    if (socketRef.current && socketRef.current.connect) {
+      socketRef.current.connect();
+    }
+  };
+  
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (reconnectTimerRef.current) {
+        clearInterval(reconnectTimerRef.current);
+      }
+    };
+  }, []);
+  
+  const handleGiveUp = () => {
+    console.log("[game] Player gave up on reconnection");
+    if (reconnectTimerRef.current) clearInterval(reconnectTimerRef.current);
+    router.replace("/" as any);
+  };
+  
   return (
     <ScreenContainer edges={["top", "left", "right"]}>
+      {/* Reconnection Handler */}
+      <ReconnectionHandler
+        isReconnecting={isReconnecting}
+        timeRemaining={reconnectTimeRemaining}
+        onReconnect={handleReconnect}
+        onGiveUp={handleGiveUp}
+      />
+      
       <View style={styles.gameRoot}>
 
 
@@ -750,9 +838,9 @@ export default function GameScreen() {
             </TouchableOpacity>
           </View>
         </View>
-      </Modal>
-    </ScreenContainer>
-  );
+        </Modal>
+      </ScreenContainer>
+    );
 }
 
 // ─── Styles ──────────────────────────────────────────────────────────────────
