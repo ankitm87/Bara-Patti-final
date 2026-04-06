@@ -78,7 +78,10 @@ export default function JoinRoomScreen() {
       setShowNameModal(true);
     } catch (err: any) {
       console.error("[join-room] Room validation error:", err);
-      setError("Room not found. Please check the code.");
+      console.error("[join-room] Error message:", err?.message);
+      console.error("[join-room] Error status:", err?.status);
+      console.error("[join-room] Error data:", err?.data);
+      setError(err?.message || "Room not found. Please check the code.");
     } finally {
       setIsValidating(false);
     }
