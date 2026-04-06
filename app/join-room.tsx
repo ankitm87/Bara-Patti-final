@@ -25,7 +25,7 @@ export default function JoinRoomScreen() {
   const [isValidating, setIsValidating] = useState(false);
   const inputRef = useRef<TextInput>(null);
   const pendingCodeRef = useRef<string>("");
-  const queryClient = trpc.useContext();
+  const queryClient = useRef(trpc.useContext()).current;
 
   // Auto-join if code is provided via URL parameter
   useEffect(() => {
@@ -60,7 +60,11 @@ export default function JoinRoomScreen() {
       setError("");
       
       // Use tRPC client to validate room exists (queries use GET automatically)
+      console.log("[join-room] Attempting to query room:", joinCode);
       const roomData = await queryClient.client.query("room.getState", { roomId: joinCode });
+      console.log("[join-room] Query response:", roomData);
+      console.log("[join-room] Response type:", typeof roomData);
+      console.log("[join-room] Response keys:", roomData ? Object.keys(roomData) : 'null');
       
       if (!roomData || !(roomData as any).roomId) {
         console.error("[join-room] No room data in response:", roomData);
