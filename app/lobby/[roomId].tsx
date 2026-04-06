@@ -285,11 +285,22 @@ export default function LobbyScreen() {
     // Get the app URL (use production URL for web, deep link for mobile)
     const appUrl = Platform.OS === 'web' 
       ? `https://bara-patti-final.vercel.app/join-room?code=${roomId}`
-      : `exps://8081-i1hq9k0nmag39oyzsn0mb-dd1926b8.sg1.manus.computer/join-room?code=${roomId}`;
+      : `https://bara-patti-final.vercel.app/join-room?code=${roomId}`;
     
-    const message = `Join my Bara Patti game! 🃏\n\n${appUrl}`;
+    const message = `Join my Bara Patti game! 🃏\n\n${appUrl}\n\nRoom Code: ${roomId}`;
     const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(message)}`;
     Linking.openURL(whatsappUrl);
+  };
+  
+  const handleCopyCode = async () => {
+    try {
+      if (Platform.OS === "web" && navigator.clipboard) {
+        await navigator.clipboard.writeText(roomId);
+        console.log("[lobby] Room code copied:", roomId);
+      }
+    } catch (error) {
+      console.error("[lobby] Failed to copy:", error);
+    }
   };
 
   // Manual start button as fallback — only room creator (seat 0) can start

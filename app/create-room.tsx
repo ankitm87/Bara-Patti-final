@@ -63,31 +63,33 @@ export default function CreateRoomScreen() {
   };
 
   const handleCopyCode = async () => {
-    if (Platform.OS === "web") {
-      try {
+    try {
+      if (Platform.OS === "web" && navigator.clipboard) {
         await navigator.clipboard.writeText(roomCode);
-        setCopied(true);
-        setTimeout(() => setCopied(false), 2000);
-      } catch {
-        // fallback
+      } else {
+        console.log("[create-room] Copy code:", roomCode);
       }
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch (error) {
+      console.error("[create-room] Failed to copy:", error);
     }
   };
 
   const handleShareWhatsApp = () => {
     // Generate join URL for direct joining
-    const appBaseUrl = Platform.OS === "web" ? window.location.origin : "exp://";
+    const appBaseUrl = Platform.OS === "web" ? window.location.origin : "https://bara-patti-final.vercel.app";
     const joinUrl = `${appBaseUrl}/join-room?code=${roomCode}`;
-    const message = `Join my Bara Patti game! 🃏\n\nClick here to join: ${joinUrl}\n\nOr enter code: ${roomCode}\nGroup: ${groupName}`;
+    const message = `Join my Bara Patti game! 🃏\n\n${joinUrl}\n\nRoom Code: ${roomCode}\nGroup: ${groupName}`;
     const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(message)}`;
     Linking.openURL(whatsappUrl);
   };
 
   const handleShare = () => {
     // Generate join URL for direct joining
-    const appBaseUrl = Platform.OS === "web" ? window.location.origin : "exp://";
+    const appBaseUrl = Platform.OS === "web" ? window.location.origin : "https://bara-patti-final.vercel.app";
     const joinUrl = `${appBaseUrl}/join-room?code=${roomCode}`;
-    const message = `Join my Bara Patti game! Click here: ${joinUrl}`;
+    const message = `Join my Bara Patti game! 🃏 ${joinUrl}`;
     if (Platform.OS === "web" && typeof navigator !== "undefined" && navigator.share) {
       navigator.share({ title: "Bara Patti Game", text: message });
     } else {
@@ -167,17 +169,19 @@ export default function CreateRoomScreen() {
               activeOpacity={0.8}
             >
               <MaterialIcons name="chat" size={22} color="#FFFFFF" />
-              <Text style={styles.whatsappText}>Share via WhatsApp</Text>
+              <Text style={styles.whatsappText}>WhatsApp</Text>
             </TouchableOpacity>
 
-            <TouchableOpacity
-              style={styles.shareButton}
-              onPress={handleShare}
-              activeOpacity={0.8}
-            >
-              <MaterialIcons name="share" size={22} color="#FFD700" />
-              <Text style={styles.shareText}>Share</Text>
-            </TouchableOpacity>
+            {Platform.OS === "web" && typeof navigator !== "undefined" && "share" in navigator && (
+              <TouchableOpacity
+                style={styles.shareButton}
+                onPress={handleShare}
+                activeOpacity={0.8}
+              >
+                <MaterialIcons name="share" size={22} color="#FFD700" />
+                <Text style={styles.shareText}>Share</Text>
+              </TouchableOpacity>
+            )}
           </View>
 
           {/* Players Waiting */}
@@ -346,8 +350,12 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 6,
     marginTop: 12,
-    paddingVertical: 6,
-    paddingHorizontal: 12,
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    backgroundColor: "#1A4D1E",
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: "#2E7D32",
   },
   copyText: {
     color: "#A5D6A7",
@@ -367,28 +375,67 @@ const styles = StyleSheet.create({
     backgroundColor: "#25D366",
     paddingVertical: 14,
     borderRadius: 12,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3,
+    elevation: 5,
   },
   whatsappText: {
     color: "#FFFFFF",
     fontSize: 15,
     fontWeight: "700",
   },
+  linkContainer: {
+    marginVertical: 12,
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+    backgroundColor: "#1A4D1E",
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: "#2E7D32",
+  },
+  linkLabel: {
+    fontSize: 12,
+    color: "#A5D6A7",
+    fontWeight: "700",
+    textTransform: "uppercase",
+    letterSpacing: 1,
+    marginBottom: 6,
+  },
+  linkValue: {
+    fontSize: 14,
+    color: "#4FC3F7",
+    fontWeight: "600",
+    textDecorationLine: "underline",
+  },
   shareButton: {
+    flex: 1,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
     gap: 8,
     backgroundColor: "#1A4D1E",
     paddingVertical: 14,
-    paddingHorizontal: 20,
     borderRadius: 12,
     borderWidth: 1,
     borderColor: "#2E7D32",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3,
+    elevation: 5,
   },
   shareText: {
     color: "#FFD700",
     fontSize: 15,
     fontWeight: "700",
+  },
+  linkText: {
+    color: "#4FC3F7",
+    fontSize: 14,
+    fontWeight: "600",
+    textDecorationLine: "underline",
   },
   playersSection: {
     gap: 10,
